@@ -81,7 +81,7 @@ jobs:
           if [ "${#FILES[@]}" -eq 0 ]; then echo "No app artifacts"; exit 1; fi
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "${FILES[@]}" --clobber
-            gh release edit "$TAG" --title "Videe $VERSION" --notes "$NOTES"
+            gh release edit "$TAG" --title "Melodee $VERSION" --notes "$NOTES"
           else
-            gh release create "$TAG" "${FILES[@]}" --title "Videe $VERSION" --notes "$NOTES"
+            gh release create "$TAG" "${FILES[@]}" --title "Melodee $VERSION" --notes "$NOTES"
           fi

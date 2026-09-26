@@ -1,11 +1,11 @@
-export const RELEASE_REPO = 'Tomo0108/videe';
+export const RELEASE_REPO = 'Tomo0108/Melodee';
 export const RELEASE_VERSION = '0.1.6';
 /** @param {string} [version] */
 export function artifactNames(version = RELEASE_VERSION) {
   return {
-    mac: `Videe-${version}-mac-arm64.dmg`,
-    win: `Videe-${version}-win-setup.exe`,
-    ios: `Videe-${version}-ios.ipa`,
+    mac: `Melodee-${version}-mac-arm64.dmg`,
+    win: `Melodee-${version}-win-setup.exe`,
+    ios: `Melodee-${version}-ios.ipa`,
   };
 }
 /** @param {string} name */

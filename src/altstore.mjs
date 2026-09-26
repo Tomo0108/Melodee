@@ -15,13 +15,13 @@ const NOTES = {
 };
 
 export function versionNote(version, fallback = '') {
-  return NOTES[version] || fallback || `Videe ${version}`;
+  return NOTES[version] || fallback || `Melodee ${version}`;
 }
 
 export function githubReleaseNotes(version) {
   return `${versionNote(version)}
 
-Native Videe builds for Mac, Windows, and iOS sideload.
+Native Melodee builds for Mac, Windows, and iOS sideload.
 
 The web player copies videos into browser storage. These apps open local files instead.
 
@@ -29,7 +29,7 @@ macOS is unsigned: Control-click Open. Windows may show SmartScreen. iOS IPA is 
 }
 
 export function ipaDownloadUrl(version) {
-  return `https://github.com/${RELEASE_REPO}/releases/download/v${version}/Videe-${version}-ios.ipa`;
+  return `https://github.com/${RELEASE_REPO}/releases/download/v${version}/Melodee-${version}-ios.ipa`;
 }
 
 export function altstoreSource({ sourceURL = ALTSTORE_JSON, iconURL = `${SITE_ORIGIN}/icons/icon-512.png`, versions }) {
@@ -38,13 +38,13 @@ export function altstoreSource({ sourceURL = ALTSTORE_JSON, iconURL = `${SITE_OR
     throw new Error('AltStore versions need version, downloadURL, and size in bytes.');
   }
   return {
-    name: 'Videe',
-    identifier: 'app.videe.source',
+    name: 'Melodee',
+    identifier: 'app.melodee.source',
     sourceURL,
     apps: [{
-      name: 'Videe',
-      bundleIdentifier: 'app.videe.player',
-      developerName: 'Videe',
+      name: 'Melodee',
+      bundleIdentifier: 'app.melodee.player',
+      developerName: 'Melodee',
       subtitle: 'A local video player',
       localizedDescription: 'Play videos that already live on this device. Install with AltStore, Sideloadly, or Finder.',
       iconURL,
