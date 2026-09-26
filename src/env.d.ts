@@ -1,0 +1,7 @@
+/// <reference types="vite/client" />
+import type { MediaItem } from './store';
+declare global {
+  interface Window {
+    videe?: { platform: string; getGpuStatus(): Promise<{ videoDecode: string; gpuCompositing: string; rasterization: string }>; pickFiles(): Promise<MediaItem[] | null>; pickFolder(): Promise<{ name: string; records: MediaItem[]; folders?: { name: string; ids: string[] }[] } | null>; importFiles(files: File[]): Promise<MediaItem[]>; getSource(id: string): Promise<string>; getArtwork(id: string): Promise<string | null>; forgetVideo(id: string): Promise<void>; convertVideo(id: string): Promise<string>; convertAudio(id: string): Promise<string>; cutVideo(id: string, start: number, end: number, duration: number): Promise<{src: string; size: number}>; cancelConversion(): Promise<void>; listSubtitles(id: string): Promise<{index: number; language: string; codec: string; label: string}[]>; extractSubtitle(id: string, index: number): Promise<string>; onConversionProgress(cb: (value: {id: string; seconds: number}) => void): () => void };
+  }
+}

@@ -1,0 +1,209 @@
+const { app, BrowserWindow, ipcMain, dialog, protocol } = require('electron');
+const { basename, isAbsolute, join } = require('node:path');
+const { existsSync, readFileSync } = require('node:fs');
+const { mediaResponse } = require('./media-response.cjs');
+const { collectAudioPaths, folderGroupName } = require('./folder.cjs');
+const fs = require('node:fs/promises');
+const { randomUUID } = require('node:crypto');
+const { spawn } = require('node:child_process');
+protocol.registerSchemesAsPrivileged([{ scheme: 'videe', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true, corsEnabled: true } }]);
+if (!app.isPackaged && process.env.VIDEE_TEST_USER_DATA) app.setPath('userData', process.env.VIDEE_TEST_USER_DATA);
+let win, registry = {}, processJob, registryFile, cacheDir;
+let writeQueue = Promise.resolve();
+function persist() { writeQueue = writeQueue.then(async () => { const tmp = registryFile + '.tmp'; await fs.writeFile(tmp, JSON.stringify(registry)); await fs.rename(tmp, registryFile); }); return writeQueue; }
+function ffmpegBinary() { return require('ffmpeg-static').replace('app.asar', 'app.asar.unpacked'); }
+function ffmpegProbe(input) {
+  return new Promise(resolve => {
+    const child = spawn(ffmpegBinary(), ['-hide_banner', '-i', input], { windowsHide: true });
+    let stderr = '';
+    const timer = setTimeout(() => child.kill('SIGTERM'), 8000);
+    child.stderr.on('data', data => { stderr = (stderr + data).slice(-20000); });
+    child.on('error', () => { clearTimeout(timer); resolve(''); });
+    child.on('close', () => { clearTimeout(timer); resolve(stderr); });
+  });
+}
+async function probeAudio(input) {
+  return /^\s*Stream #0:\d+.+: Audio:/m.test(await ffmpegProbe(input));
+}
+function extractArtwork(input) {
+  return new Promise(resolve => {
+    const child = spawn(ffmpegBinary(), ['-hide_banner', '-nostdin', '-i', input, '-map', '0:v:0?', '-frames:v', '1', '-f', 'image2pipe', '-vcodec', 'mjpeg', 'pipe:1'], { windowsHide: true });
+    const chunks = []; let size = 0; let finished = false;
+    const finish = value => { if (!finished) { finished = true; resolve(value); } };
+    const timer = setTimeout(() => { child.kill('SIGTERM'); finish(null); }, 12000);
+    child.stdout.on('data', data => { size += data.length; if (size > 8 * 1024 * 1024) { child.kill('SIGTERM'); return finish(null); } chunks.push(data); });
+    child.on('error', () => { clearTimeout(timer); finish(null); });
+    child.on('close', code => { clearTimeout(timer); const image = Buffer.concat(chunks); finish(code === 0 && image.length ? `data:image/jpeg;base64,${image.toString('base64')}` : null); });
+  });
+}
+function runEncode(id, args, extension = 'mp4') {
+  const binary = ffmpegBinary();
+  const output = join(cacheDir, `${id}.${extension}`);
+  const temp = join(cacheDir, `${id}.partial.${extension}`);
+  return new Promise((resolve, reject) => {
+    const child = spawn(binary, ['-hide_banner', '-nostdin', '-y', ...args, '-movflags', '+faststart', '-progress', 'pipe:1', temp], { windowsHide: true });
+    const job = { id, child, cancelled: false }; processJob = job; let stderr = '';
+    child.stderr.on('data', data => { stderr = (stderr + data).slice(-3000); });
+    child.stdout.on('data', data => { const match = String(data).match(/out_time_us=(\d+)/); if (match && win && !win.isDestroyed()) win.webContents.send('conversion-progress', { id, seconds: Number(match[1]) / 1e6 }); });
+    child.on('error', async () => { processJob = undefined; await fs.rm(temp, { force: true }).catch(() => {}); reject(new Error('Could not start the conversion engine.')); });
+    child.on('close', async code => {
+      processJob = undefined;
+      try {
+        if (code !== 0 || job.cancelled) { await fs.rm(temp, { force: true }); return reject(new Error(job.cancelled ? 'Conversion cancelled.' : 'Conversion failed. Damaged or encrypted files cannot be played.')); }
+        await fs.rename(temp, output); registry[id].converted = output; await persist();
+        const stat = await fs.stat(output);
+        resolve({ src: `videe://media/${id}?converted=${Date.now()}`, size: stat.size });
+      } catch { reject(new Error('Could not save the converted video. Check available storage.')); }
+    });
+  });
+}
+function register(channel, handler) { ipcMain.handle(channel, async (event, ...args) => { if (!win || event.sender !== win.webContents || event.senderFrame !== win.webContents.mainFrame) throw new Error('Unauthorized'); return handler(...args); }); }
+async function importPaths(filePaths) {
+  if (!Array.isArray(filePaths) || filePaths.length > 1000 || filePaths.some(file => typeof file !== 'string' || !isAbsolute(file))) throw new Error('Invalid files');
+  const collected = [];
+  for (const file of filePaths) {
+    if (collected.length >= 1000) break;
+    let stat;
+    try { stat = await fs.stat(file); } catch { continue; }
+    if (stat.isDirectory()) collected.push(...await collectAudioPaths(file, { maxFiles: 1000 - collected.length }));
+    else if (stat.isFile()) collected.push(file);
+  }
+  const records = [];
+  for (const file of collected.slice(0, 1000)) {
+    let stat;
+    try { stat = await fs.stat(file); } catch { continue; }
+    if (!stat.isFile()) continue;
+    const existing = Object.entries(registry).find(([,entry]) => entry.path === file);
+    const id = existing?.[0] || randomUUID(); registry[id] ||= { path: file };
+    records.push({ id, name: basename(file), size: stat.size, native: true, type: '', added: Date.now(), duration: 0, position: 0, favorite: false, lastPlayed: 0 });
+  }
+  await persist(); return records;
+}
+function createWindow() {
+  win = new BrowserWindow({ ...(process.platform === 'darwin' ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 20, y: 25 } } : {}), width: 1440, height: 940, minWidth: 800, minHeight: 640, title: 'Melodee', backgroundColor: '#fafafa', icon: join(__dirname, '../dist/icon.png'), webPreferences: { preload: join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true } });
+  win.setMenuBarVisibility(false);
+  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  win.webContents.on('will-navigate', event => event.preventDefault());
+  if (process.argv.includes('--dev')) win.loadURL('http://127.0.0.1:5173'); else win.loadFile(playerHtml());
+}
+function playerHtml() {
+  const dist = join(__dirname, '../dist');
+  for (const name of ['app.html', 'index.html']) {
+    const file = join(dist, name);
+    if (!existsSync(file)) continue;
+    const html = readFileSync(file, 'utf8');
+    if (html.includes('/src/main.tsx') || /assets\/main-/.test(html)) return file;
+  }
+  return join(dist, 'index.html');
+}
+app.whenReady().then(async () => {
+  if (process.platform === 'darwin') app.dock?.setIcon(join(__dirname, '../dist/icon.png'));
+  registryFile = join(app.getPath('userData'), 'library.json'); cacheDir = join(app.getPath('userData'), 'converted');
+  await fs.mkdir(cacheDir, { recursive: true });
+  try { registry = JSON.parse(await fs.readFile(registryFile, 'utf8')); } catch { registry = {}; }
+  protocol.handle('videe', async request => {
+    const url = new URL(request.url); const id = url.pathname.slice(1); const entry = registry[id];
+    if (url.hostname !== 'media' || !entry) return new Response('Not found', { status: 404 });
+    try { return await mediaResponse(request, entry.converted || entry.path); } catch { return new Response('File unavailable', { status: 404 }); }
+  });
+  register('get-gpu-status', async () => {
+    const status = await app.getGPUFeatureStatus();
+    return {
+      videoDecode: status.video_decode || 'unknown',
+      gpuCompositing: status.gpu_compositing || 'unknown',
+      rasterization: status.rasterization || 'unknown',
+    };
+  });
+  register('pick-files', async () => {
+    const result = await dialog.showOpenDialog(win, { title: 'Open tracks', properties: ['openFile', 'multiSelections'], filters: [{ name: 'Audio', extensions: ['mp1','mp2','mp3','m4a','m4b','mp4','aac','alac','ogg','oga','opus','flac','wv','wav','wave','w64','rf64','aiff','aif','au','snd','wma','ac3','dts','mpc','mpp','mp+','spx','ape','tak','mka','mkv','webm','ts'] }] });
+    if (result.canceled) return null;
+    return importPaths(result.filePaths);
+  });
+  register('pick-folder', async () => {
+    const result = await dialog.showOpenDialog(win, { title: 'Open folder', properties: ['openDirectory'] });
+    if (result.canceled || !result.filePaths[0]) return null;
+    const dir = result.filePaths[0];
+    const records = await importPaths([dir]);
+    let name = '';
+    try { if ((await fs.stat(dir)).isDirectory()) name = basename(dir); } catch { /* Missing paths are skipped by importPaths. */ }
+    const grouped = new Map();
+    for (const record of records) {
+      const filePath = registry[record.id]?.path;
+      const folder = filePath ? folderGroupName(dir, filePath) : name;
+      if (!grouped.has(folder)) grouped.set(folder, []);
+      grouped.get(folder).push(record.id);
+    }
+    return { name, records, folders: [...grouped].map(([folder, ids]) => ({ name: folder, ids })) };
+  });
+  register('import-paths', importPaths);
+  register('get-source', async id => { const entry = registry[id]; if (!entry) throw new Error('File not found. Please add it again.'); await fs.access(entry.converted || entry.path); return `videe://media/${id}`; });
+  register('get-artwork', async id => { const entry = registry[id]; if (!entry) return null; try { await fs.access(ffmpegBinary()); await fs.access(entry.path); return await extractArtwork(entry.path); } catch { return null; } });
+  register('forget-video', async id => { if (processJob?.id === id) throw new Error('Cancel the conversion before removing this video.'); const entry = registry[id]; if (entry?.converted) await fs.rm(entry.converted, { force: true }); delete registry[id]; await persist(); });
+  register('cancel-conversion', () => { if (processJob) { processJob.cancelled = true; processJob.child.kill('SIGTERM'); } });
+  register('convert-video', async id => {
+    if (!registry[id]) throw new Error('Video not found.');
+    if (processJob) throw new Error('Another video is being converted.');
+    await fs.access(ffmpegBinary());
+    const result = await runEncode(id, ['-i', registry[id].path, '-map', '0:v:0', '-map', '0:a:0?', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '21', '-pix_fmt', 'yuv420p', '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2', '-c:a', 'aac', '-b:a', '192k']);
+    return result.src;
+  });
+  register('convert-audio', async id => {
+    if (!registry[id]) throw new Error('Track not found.');
+    if (processJob) throw new Error('Another track is being converted.');
+    await fs.access(ffmpegBinary());
+    const result = await runEncode(id, ['-i', registry[id].path, '-map', '0:a:0', '-vn', '-c:a', 'aac', '-b:a', '256k'], 'm4a');
+    return result.src;
+  });
+  register('cut-video', async (id, start, end, duration) => {
+    if (!registry[id]) throw new Error('Video not found.');
+    if (processJob) throw new Error('Another video is being converted.');
+    const { keepSegments, cutFilter, cutMaps } = await import('../src/media.mjs');
+    const parts = keepSegments(start, end, duration);
+    if (!parts) throw new Error('Keep at least 0.25 seconds of video.');
+    const input = registry[id].converted || registry[id].path;
+    await fs.access(ffmpegBinary());
+    await fs.access(input);
+    const audio = await probeAudio(input);
+    const result = await runEncode(id, ['-i', input, '-filter_complex', cutFilter(parts, audio), ...cutMaps(parts, audio), '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '21', '-pix_fmt', 'yuv420p', ...(audio ? ['-c:a', 'aac', '-b:a', '192k'] : ['-an'])]);
+    return result;
+  });
+  register('list-subtitles', async id => {
+    const entry = registry[id];
+    if (!entry) throw new Error('Video not found.');
+    const input = entry.path || entry.converted;
+    await fs.access(input);
+    const { parseSubtitleStreams } = await import('../src/media.mjs');
+    return parseSubtitleStreams(await ffmpegProbe(input));
+  });
+  register('extract-subtitle', async (id, index) => {
+    const entry = registry[id];
+    if (!entry) throw new Error('Video not found.');
+    if (!Number.isInteger(index) || index < 0 || index > 31) throw new Error('Subtitle track not found.');
+    const input = entry.path || entry.converted;
+    await fs.access(ffmpegBinary());
+    await fs.access(input);
+    const { parseSubtitleStreams, toVtt } = await import('../src/media.mjs');
+    const tracks = parseSubtitleStreams(await ffmpegProbe(input));
+    if (!tracks.some(track => track.index === index)) throw new Error('Subtitle track not found.');
+    const text = await new Promise((resolve, reject) => {
+      const child = spawn(ffmpegBinary(), ['-hide_banner', '-nostdin', '-i', input, '-map', `0:s:${index}`, '-f', 'webvtt', 'pipe:1'], { windowsHide: true });
+      const chunks = [];
+      let stderr = '';
+      const timer = setTimeout(() => child.kill('SIGTERM'), 20000);
+      child.stdout.on('data', data => { chunks.push(data); if (chunks.reduce((sum, chunk) => sum + chunk.length, 0) > 5 * 1024 * 1024) child.kill('SIGTERM'); });
+      child.stderr.on('data', data => { stderr = (stderr + data).slice(-3000); });
+      child.on('error', () => { clearTimeout(timer); reject(new Error('Could not read embedded subtitles.')); });
+      child.on('close', code => {
+        clearTimeout(timer);
+        if (code !== 0) return reject(new Error('Could not read embedded subtitles.'));
+        resolve(Buffer.concat(chunks).toString('utf8'));
+      });
+    });
+    if (!text.trim()) throw new Error('Could not read embedded subtitles.');
+    return toVtt(text);
+  });
+  createWindow();
+  app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
+});
+app.on('before-quit', () => { processJob?.child.kill('SIGTERM'); });
+app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });

@@ -1,0 +1,18 @@
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
+contextBridge.exposeInMainWorld('videe', {
+  platform: process.platform,
+  getGpuStatus: () => ipcRenderer.invoke('get-gpu-status'),
+  pickFiles: () => ipcRenderer.invoke('pick-files'),
+  importFiles: files => ipcRenderer.invoke('import-paths', files.map(file => webUtils.getPathForFile(file)).filter(Boolean)),
+  pickFolder: () => ipcRenderer.invoke('pick-folder'),
+  getSource: id => ipcRenderer.invoke('get-source', id),
+  getArtwork: id => ipcRenderer.invoke('get-artwork', id),
+  forgetVideo: id => ipcRenderer.invoke('forget-video', id),
+  convertVideo: id => ipcRenderer.invoke('convert-video', id),
+  convertAudio: id => ipcRenderer.invoke('convert-audio', id),
+  cutVideo: (id, start, end, duration) => ipcRenderer.invoke('cut-video', id, start, end, duration),
+  cancelConversion: () => ipcRenderer.invoke('cancel-conversion'),
+  listSubtitles: id => ipcRenderer.invoke('list-subtitles', id),
+  extractSubtitle: (id, index) => ipcRenderer.invoke('extract-subtitle', id, index),
+  onConversionProgress: callback => { const handler = (_event, value) => callback(value); ipcRenderer.on('conversion-progress', handler); return () => ipcRenderer.removeListener('conversion-progress', handler); }
+});
