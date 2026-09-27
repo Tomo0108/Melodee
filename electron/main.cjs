@@ -80,7 +80,7 @@ async function importPaths(filePaths) {
   await persist(); return records;
 }
 function createWindow() {
-  win = new BrowserWindow({ ...(process.platform === 'darwin' ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 20, y: 25 } } : {}), width: 1440, height: 940, minWidth: 800, minHeight: 640, title: 'Melodee', backgroundColor: '#fafafa', icon: join(__dirname, '../dist/icon.png'), webPreferences: { preload: join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true } });
+  win = new BrowserWindow({ ...(process.platform === 'darwin' ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 20, y: 25 } } : {}), width: 1440, height: 940, minWidth: 800, minHeight: 640, title: 'Melodee', backgroundColor: '#fafafa', icon: join(__dirname, '../dist/icons/Videe.icns'), webPreferences: { preload: join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true } });
   win.setMenuBarVisibility(false);
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   win.webContents.on('will-navigate', event => event.preventDefault());
@@ -97,7 +97,7 @@ function playerHtml() {
   return join(dist, 'index.html');
 }
 app.whenReady().then(async () => {
-  if (process.platform === 'darwin') app.dock?.setIcon(join(__dirname, '../dist/icon.png'));
+  if (process.platform === 'darwin') app.dock?.setIcon(join(__dirname, '../dist/icons/Videe.icns'));
   registryFile = join(app.getPath('userData'), 'library.json'); cacheDir = join(app.getPath('userData'), 'converted');
   await fs.mkdir(cacheDir, { recursive: true });
   try { registry = JSON.parse(await fs.readFile(registryFile, 'utf8')); } catch { registry = {}; }
