@@ -49,7 +49,7 @@ if (!appPath) {
 const stage = join('release', 'ios-payload');
 rmSync(stage, { recursive: true, force: true });
 mkdirSync(join(stage, 'Payload'), { recursive: true });
-cpSync(appPath, join(stage, 'Payload', 'Videe.app'), { recursive: true });
+cpSync(appPath, join(stage, 'Payload', 'Melodee.app'), { recursive: true });
 const ipa = join('release', artifactNames().ios);
 rmSync(ipa, { force: true });
 run('/usr/bin/ditto', ['-c', '-k', '--norsrc', '--keepParent', 'Payload', join('..', artifactNames().ios)], { cwd: stage });

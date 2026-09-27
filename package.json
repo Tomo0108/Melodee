@@ -14,7 +14,7 @@
     "desktop": "npm run build && node scripts/ensure-player-index.mjs && electron .",
     "desktop:dev": "concurrently -k \"vite --host 127.0.0.1\" \"wait-on http://127.0.0.1:5173 && electron . --dev\"",
     "package:mac": "node scripts/check-platform.mjs darwin && npm run build && node scripts/ensure-player-index.mjs && electron-builder --mac --dir --publish never",
-    "package:mac:dmg": "node scripts/check-platform.mjs darwin && npm run build && node scripts/ensure-player-index.mjs && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac dmg zip --publish never",
+    "package:mac:dmg": "node scripts/check-platform.mjs darwin && npm run build && node scripts/ensure-player-index.mjs && electron-builder --mac dmg zip --publish never",
     "package:win": "node scripts/check-platform.mjs win32 && npm run build && node scripts/ensure-player-index.mjs && electron-builder --win nsis --publish never",
     "package:ios": "node scripts/package-ios.mjs",
     "ios:sync": "npm run build && node scripts/ensure-player-index.mjs && cap sync ios",
@@ -53,9 +53,12 @@
     "mac": {
       "category": "public.app-category.music",
       "icon": "public/icons/Videe.icns",
-      "identity": null,
-      "hardenedRuntime": false,
-      "gatekeeperAssess": false,
+      "forceCodeSigning": true,
+      "hardenedRuntime": true,
+      "gatekeeperAssess": true,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.inherit.plist",
+      "notarize": true,
       "target": [
         "dmg",
         "zip"
