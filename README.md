@@ -25,6 +25,8 @@ macOSとWindowsの配布物は`release/`に出力されます。iOSのIPAを作�
 
 macOS向けの公開DMGはDeveloper IDで署名し、Appleの公証を通過させる必要があります。未署名のローカルビルドは配布用ではありません。
 
+自分のMacでのみ使う未署名の`.app`は、`npm run package:mac:local`で`release/mac-arm64/Melodee.app`へ生成できます。
+
 ## Vercel
 
 VercelではトップページをMelodeeの配布サイトとして公開し、`/app`でWebプレイヤーを提供します。ビルド時にAltStoreソースも生成されます。
