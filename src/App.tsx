@@ -60,6 +60,7 @@ export default function App() {
   const [infoId, setInfoId] = useState<string|null>(null);
   const queue = useRef<string[]>([]); const visibleIds = useRef<string[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null); const [source, setSource] = useState(''); const [playing,setPlaying] = useState(false); const [position,setPosition] = useState(0); const [duration,setDuration] = useState(0);
+  const [minimized, setMinimized] = useState(false);
   const [muted,setMuted] = useState(false); const [error,setError] = useState(''); const [loading,setLoading] = useState(false); const [busy,setBusy] = useState(false); const [folderLoading,setFolderLoading] = useState(false); const [conversion,setConversion] = useState<number | null>(null);
   const [prefs,setPrefs] = useState<Preferences>(getPreferences); const [modal,setModal] = useState<'settings'|'subtitles'|'cut'|null>(null); const [deleteIds,setDeleteIds] = useState<string[]|null>(null); const [toast,setToast] = useState(''); const [dragging,setDragging] = useState(false);
   const [gpuStatus,setGpuStatus] = useState<GpuStatus|null>(null); const [gpuLoading,setGpuLoading] = useState(false);
@@ -168,7 +169,7 @@ export default function App() {
     if(!activeRef.current) queue.current = visibleIds.current;
     if(!queue.current.includes(item.id)) queue.current = [...queue.current, item.id];
     saveProgress(); forceResume.current = resumePlayback; playAfterLoad.current = continuePlayback; startFromBeginning.current = continuePlayback; const sequence = ++openSequence.current;
-    setAb({a:null,b:null}); setLooping(false); setCutting(false); setCut({a:null,b:null}); setActiveId(item.id); setSource(''); setPlaying(false); setError(''); setLoading(true); setPosition(0); setDuration(0); setSubtitle(null); setEmbeddedTracks([]); setChrome(true); setVideoZoom(1); setVideoPan({x:0,y:0}); lastSave.current = 0; lastPositionPaint.current = 0;
+    setAb({a:null,b:null}); setLooping(false); setCutting(false); setCut({a:null,b:null}); setMinimized(false); setActiveId(item.id); setSource(''); setPlaying(false); setError(''); setLoading(true); setPosition(0); setDuration(0); setSubtitle(null); setEmbeddedTracks([]); setChrome(true); setVideoZoom(1); setVideoPan({x:0,y:0}); lastSave.current = 0; lastPositionPaint.current = 0;
     try {
       let src: string;
       if(item.native && window.videe) src = await window.videe.getSource(item.id);
@@ -496,7 +497,7 @@ export default function App() {
       if (activeRef.current && unique.includes(activeRef.current)) {
         ++openSequence.current;
         videoRef.current?.pause();
-        setActiveId(null); activeRef.current = null; setSource(''); setError(''); setLoading(false); setPosition(0); setDuration(0); setSubtitle(null);
+        setMinimized(false); setActiveId(null); activeRef.current = null; setSource(''); setError(''); setLoading(false); setPosition(0); setDuration(0); setSubtitle(null);
       }
       const next = itemsRef.current.filter(item => !unique.includes(item.id));
       itemsRef.current = next;
@@ -556,8 +557,7 @@ export default function App() {
   };
   const closePlayer = () => {
     if(conversion !== null) { notify('Cancel the current media task before returning to the library.'); return; }
-    saveProgress(); videoRef.current?.pause(); ++openSequence.current;
-    activeRef.current = null; setActiveId(null); setSource(''); setError(''); setLoading(false); setPlaying(false); setSubtitle(null); setEmbeddedTracks([]); setViewSlide('in');
+    saveProgress(); setMinimized(true); setViewSlide('in');
   };
   const closeMenu = (element: HTMLElement) => element.closest('details')?.removeAttribute('open');
   useEffect(() => {
@@ -576,7 +576,8 @@ export default function App() {
     media.addEventListener('change', syncDark);
     return () => { media.removeEventListener('change', syncDark); reducedMotion.removeEventListener('change', syncMotion); };
   }, [prefs.theme, prefs.motion]);
-  return <div className={`app-shell ${active ? 'watching' : 'browsing'} ${window.videe?.platform === 'darwin' ? 'native-mac' : ''}`} 
+  const playerOpen = !!active && !minimized;
+  return <div className={`app-shell ${playerOpen ? 'watching' : 'browsing'} ${window.videe?.platform === 'darwin' ? 'native-mac' : ''}`}
     onDragEnter={e => { e.preventDefault(); if(controlsLocked)return; if(e.dataTransfer.types.includes('Files')) { dragDepth.current++; setDragging(true); } }}
     onDragOver={e => e.preventDefault()}
     onDragLeave={e => { e.preventDefault(); if(--dragDepth.current <= 0) { dragDepth.current=0; setDragging(false); } }}
@@ -588,10 +589,10 @@ export default function App() {
     <input ref={artworkRef} type="file" accept="image/png,image/jpeg,image/webp,image/avif" hidden onChange={e => { void importArtwork(e.target.files?.[0]); e.target.value=''; }}/>
 
     <header className="app-header" inert={controlsLocked}>
-      {active ? <div className="player-heading"><IconButton icon={ArrowLeft} label="Back to library" onClick={closePlayer}/><h1 title={active.name}>{active.name}</h1></div>
+      {playerOpen ? <div className="player-heading"><IconButton icon={ArrowLeft} label="Back to library" onClick={closePlayer}/><h1 title={active.name}>{active.name}</h1></div>
         : <div className="brand"><img src="./icon.png" width="30" height="30" alt=""/><span>Melodee</span></div>}
       <div className="header-actions">
-        {!active && <><button className="icon-button header-open-video" aria-label="Open tracks" title="Open tracks" disabled={busy || !ready} onClick={() => void pickFiles()}>{busy || !ready ? <Loader2 size={18} className="spin" aria-hidden="true"/> : <Upload size={18} strokeWidth={1.8} aria-hidden="true"/>}</button><button className="icon-button header-open" aria-label="Open folder" title="Open folder" disabled={busy || !ready} onClick={() => void pickFolder()}>{busy || !ready ? <Loader2 size={18} className="spin" aria-hidden="true"/> : <FolderOpen size={18} strokeWidth={1.8} aria-hidden="true"/>}</button></>}
+        {!playerOpen && <><button className="icon-button header-open-video" aria-label="Open tracks" title="Open tracks" disabled={busy || !ready} onClick={() => void pickFiles()}>{busy || !ready ? <Loader2 size={18} className="spin" aria-hidden="true"/> : <Upload size={18} strokeWidth={1.8} aria-hidden="true"/>}</button><button className="icon-button header-open" aria-label="Open folder" title="Open folder" disabled={busy || !ready} onClick={() => void pickFolder()}>{busy || !ready ? <Loader2 size={18} className="spin" aria-hidden="true"/> : <FolderOpen size={18} strokeWidth={1.8} aria-hidden="true"/>}</button></>}
         <IconButton icon={Settings2} label="Settings" onClick={() => setModal('settings')}/>
       </div>
     </header>
@@ -601,11 +602,12 @@ export default function App() {
       <div className="folder-import-files" aria-hidden="true"><i/><i/><i/></div>
     </div>}
 
-    {!active && <aside className="library-sidebar"><nav aria-label="Library navigation" data-selected={scope?undefined:view}><span className="nav-pill" aria-hidden="true"/>{destinations.map(({id,label,icon:Icon}) => <button key={id} aria-label={label} title={label} aria-pressed={view===id&&!scope} className={view===id&&!scope?'selected':''} onClick={()=>selectView(id)}><Icon size={20} aria-hidden="true"/></button>)}</nav></aside>}
+    {!playerOpen && <aside className="library-sidebar"><nav aria-label="Library navigation" data-selected={scope?undefined:view}><span className="nav-pill" aria-hidden="true"/>{destinations.map(({id,label,icon:Icon}) => <button key={id} aria-label={label} title={label} aria-pressed={view===id&&!scope} className={view===id&&!scope?'selected':''} onClick={()=>selectView(id)}><Icon size={20} aria-hidden="true"/></button>)}</nav></aside>}
     <main id="main" tabIndex={-1}>
-      {!active && <div className="library-organization"><Organization items={items} collections={collections} save={saveCollections} selected={selected} select={setSelected} scope={scope==='unfiled'?'':scope} setScope={value=>{setViewSlide('in');setScope(value==='unfiled'?'':value);setView('all');setQuery('');}} rename={batchRename} onDeleteCollection={deleteCollection}/></div>}
-      {active ? <section className="player-view" aria-label="Music player">
+      {!playerOpen && <div className="library-organization"><Organization items={items} collections={collections} save={saveCollections} selected={selected} select={setSelected} scope={scope==='unfiled'?'':scope} setScope={value=>{setViewSlide('in');setScope(value==='unfiled'?'':value);setView('all');setQuery('');}} rename={batchRename} onDeleteCollection={deleteCollection}/></div>}
+      {active && <section className={`player-view${minimized ? ' mini-player' : ''}`} aria-label={minimized ? 'Mini player' : 'Music player'}>
         <div className="player-stage" ref={stageRef} data-chrome={chrome || controlsLocked || cutting ? 'on' : 'off'} onPointerMove={() => revealChrome()}>
+          {minimized && <div className="mini-player-bar"><button className="mini-player-open" onClick={() => setMinimized(false)} aria-label={`Open player for ${active.name}`}><span className="mini-player-art">{active.thumbnail ? <img src={active.thumbnail} alt=""/> : <Music2 size={21} aria-hidden="true"/>}</span><span><strong>{active.name.replace(/\.[^.]+$/,'')}</strong><small>{timeLabel(position)} / {timeLabel(duration)}</small></span></button><IconButton icon={playing ? Pause : Play} label={playing ? 'Pause' : 'Play'} onClick={togglePlay} disabled={!source || !!error}/><IconButton icon={Maximize} label="Open player" onClick={() => setMinimized(false)}/></div>}
           <div className="video-surface" inert={controlsLocked}>
             <div className="now-playing-art" aria-hidden="true">{active.thumbnail ? <img src={active.thumbnail} alt=""/> : <Music2 size={88} strokeWidth={1.1}/>}</div>
             {source && <video className="audio-source" key={source} ref={videoRef} src={source} playsInline preload="metadata" muted={muted} loop={prefs.repeat==='one' && !(looping && ab.b!==null)} data-zoomed={videoZoom>1?'' : undefined} style={{transform:`translate(${videoPan.x}px, ${videoPan.y}px) scale(${videoZoom})`}} onClick={handleVideoClick} onDoubleClick={handleVideoDoubleClick} onWheel={handleVideoWheel} onPointerDown={startVideoPan} onPointerMove={moveVideoPan} onPointerUp={endVideoPan} onPointerCancel={endVideoPan} onLoadedMetadata={loaded} onLoadedData={captureThumbnail} onSeeked={captureThumbnail} onPlay={()=>setPlaying(true)} onPause={()=>{setPlaying(false);saveProgress();}} onWaiting={()=>setLoading(true)} onPlaying={()=>setLoading(false)} onCanPlay={()=>setLoading(false)} onTimeUpdate={()=>{const t=videoRef.current?.currentTime||0;if(looping&&ab.a!==null&&ab.b!==null&&t>=ab.b){seek(ab.a);return;}if(Math.abs(t-lastPositionPaint.current)>=.25){lastPositionPaint.current=t;setPosition(t);}if(Math.abs(t-lastSave.current)>5&&activeId){lastSave.current=t;updateItem(activeId,{position:t});}}} onEnded={handleEnded} onError={()=>{setLoading(false);setPlaying(false);setError('This audio format is not supported by this player.');}}>{subtitle?.url && <track key={subtitle.url} kind="subtitles" src={subtitle.url} srcLang="ja" label={subtitle.name} default/>}</video>}
@@ -644,7 +646,8 @@ export default function App() {
             </div>
           </div>
         </div>
-      </section> : <section className="library-section" aria-label="Library">
+      </section>}
+      {!playerOpen && <section className="library-section" aria-label="Library">
         <div className="library-header">
           <div className="library-title"><h1 className="sr-only">Library</h1><p className="library-count" role="status">{filtered.length} {filtered.length===1?'track':'tracks'}</p></div>
           <nav className="library-tabs" aria-label="Browse library" data-selected={scope?undefined:view}><span className="tab-pill" aria-hidden="true"/>{destinations.map(({id,label,icon:Icon})=><button key={id} aria-label={label} title={label} className={view===id&&!scope?'selected':''} aria-pressed={view===id&&!scope} onClick={()=>selectView(id)}><Icon size={20} aria-hidden="true"/></button>)}</nav>
