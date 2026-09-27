@@ -164,7 +164,7 @@ export default function App() {
   }, [notify]);
   useEffect(() => { const handler = () => { if(document.visibilityState === 'hidden') saveProgress(); }; document.addEventListener('visibilitychange',handler); return () => document.removeEventListener('visibilitychange',handler); }, [saveProgress]);
   const openItem = useCallback(async (item: MediaItem, continuePlayback = false, resumePlayback = false) => {
-    if(conversion !== null) { notify('Finish or cancel the current video task before switching.'); return; }
+    if(conversion !== null) { notify('Finish or cancel the current media task before switching.'); return; }
     if(!activeRef.current) queue.current = visibleIds.current;
     if(!queue.current.includes(item.id)) queue.current = [...queue.current, item.id];
     saveProgress(); forceResume.current = resumePlayback; playAfterLoad.current = continuePlayback; startFromBeginning.current = continuePlayback; const sequence = ++openSequence.current;
@@ -178,7 +178,7 @@ export default function App() {
         else {
           const blob = item.blob || await readMediaBlob(item.id);
           if(sequence !== openSequence.current) return;
-          if(!blob) throw new Error('Please add this video again.');
+          if(!blob) throw new Error('Please add this track again.');
           src = URL.createObjectURL(blob); urls.current.set(item.id,src);
           for(const [id,url] of urls.current) { if(id!==item.id && urls.current.size>2) { URL.revokeObjectURL(url); urls.current.delete(id); } }
         }
@@ -196,7 +196,7 @@ export default function App() {
           } catch { if (sequence === openSequence.current) setEmbeddedTracks([]); }
         })();
       }
-    } catch(e) { if(sequence === openSequence.current) { setError(e instanceof Error ? e.message : 'Could not open this video.'); setLoading(false); } }
+    } catch(e) { if(sequence === openSequence.current) { setError(e instanceof Error ? e.message : 'Could not open this track.'); setLoading(false); } }
   }, [applyEmbedded,conversion,notify,saveProgress,updateItem]);
   const importFiles = async (files: File[]) => {
     if(busy || !ready || controlsLocked) return;
@@ -208,7 +208,7 @@ export default function App() {
       try {
         const records = await window.videe.importFiles(files);
         await addNativeRecords(records, folderName, groups.map(group => ({ name: group.name, ids: idsFor(group.files, records) })));
-      } catch { notify('Could not add videos. Try opening a folder.'); }
+      } catch { notify('Could not add tracks. Try opening a folder.'); }
       finally { setBusy(false); }
       return;
     }
@@ -226,7 +226,7 @@ export default function App() {
       if(named.length) fileIntoFolders(named, folderName);
       else if(folderName) fileIntoFolder(folderName, folderIds);
       else fileIntoScope(folderIds);
-      if(transient) notify('Storage is full. Some videos are available for this session only.');
+      if(transient) notify('Storage is full. Some tracks are available for this session only.');
       else if(invalid) notify(`Skipped ${invalid} non-audio files.`);
       else if(!count) notify(first ? 'This track is already in your library.' : 'No tracks in this folder.');
       if(first && !activeRef.current && !folderName && !scope) { visibleIds.current = itemsRef.current.map(i=>i.id); await openItem(first); }
@@ -266,7 +266,7 @@ export default function App() {
         if(picked === null) return;
         if(!picked.length) { notify('No supported tracks selected.'); return; }
         await addNativeRecords(picked);
-      } catch { notify('Could not add videos.'); }
+      } catch { notify('Could not add tracks.'); }
       finally { setBusy(false); }
       return;
     }
@@ -279,7 +279,7 @@ export default function App() {
     node.setAttribute('directory', '');
     node.multiple = true;
   }, []);
-  const togglePlay = useCallback(() => { const video = videoRef.current; if(!video || !source || error) return; if(video.paused) void video.play().catch(() => notify('Could not start playback. Check the video file.')); else video.pause(); }, [source,error,notify]);
+  const togglePlay = useCallback(() => { const video = videoRef.current; if(!video || !source || error) return; if(video.paused) void video.play().catch(() => notify('Could not start playback. Check the media file.')); else video.pause(); }, [source,error,notify]);
   const seek = useCallback((seconds: number) => { const video = videoRef.current; if(video && Number.isFinite(video.duration)) { video.currentTime = clampTime(seconds,video.duration); setPosition(video.currentTime); } }, []);
   const nextVideo = useCallback((offset: number) => { const index = queue.current.indexOf(activeRef.current || ''); const item = itemsRef.current.find(i => i.id === queue.current[index+offset]); if(item) void openItem(item); }, [openItem]);
   const fullscreen = useCallback(async () => { const stage = stageRef.current; if(!stage || !activeRef.current) return; try { if(document.fullscreenElement) await document.exitFullscreen(); else if(stage.requestFullscreen) await stage.requestFullscreen(); else (videoRef.current as HTMLVideoElement & {webkitEnterFullscreen?:()=>void})?.webkitEnterFullscreen?.(); } catch { notify('Full screen is not available on this device.'); } }, [notify]);
@@ -431,7 +431,7 @@ export default function App() {
   const applyCutRange = (a: number, b: number) => {
     const range = clipLoop(a, b, duration);
     if (!range) { notify('Set a segment at least 0.25 seconds long.'); return null; }
-    if (!keepSegments(range.a, range.b, duration)) { notify('Keep at least 0.25 seconds of video.'); return null; }
+    if (!keepSegments(range.a, range.b, duration)) { notify('Keep at least 0.25 seconds of media.'); return null; }
     setCut(range); return range;
   };
   const toggleCut = () => {
@@ -441,7 +441,7 @@ export default function App() {
   };
   const confirmCut = async () => {
     if (!activeId || cut.a === null || cut.b === null) return;
-    if (!keepSegments(cut.a, cut.b, duration)) { notify('Keep at least 0.25 seconds of video.'); return; }
+    if (!keepSegments(cut.a, cut.b, duration)) { notify('Keep at least 0.25 seconds of media.'); return; }
     setModal(null);
     if (!window.videe?.cutVideo) { notify('Removing a segment needs the Melodee app.'); return; }
     videoRef.current?.pause();
@@ -504,7 +504,7 @@ export default function App() {
       setSelected(current => current.filter(id => !unique.includes(id)));
       saveCollections(collectionsRef.current.map(collection => ({ ...collection, ids: collection.ids.filter(id => !unique.includes(id)) })));
       setDeleteIds(null);
-    } catch { notify('Could not remove this video. Cancel any active conversion first.'); }
+    } catch { notify('Could not remove this track. Cancel any active conversion first.'); }
   };
   const confirmDelete = async () => { if (deleteIds?.length) await removeFromLibrary(deleteIds); };
   const deleteCollection = async (collection: Collection) => {
@@ -555,7 +555,7 @@ export default function App() {
     setPrefs({...prefs, layout});
   };
   const closePlayer = () => {
-    if(conversion !== null) { notify('Cancel the current video task before returning to the library.'); return; }
+    if(conversion !== null) { notify('Cancel the current media task before returning to the library.'); return; }
     saveProgress(); videoRef.current?.pause(); ++openSequence.current;
     activeRef.current = null; setActiveId(null); setSource(''); setError(''); setLoading(false); setPlaying(false); setSubtitle(null); setEmbeddedTracks([]); setViewSlide('in');
   };
@@ -646,9 +646,9 @@ export default function App() {
         </div>
       </section> : <section className="library-section" aria-label="Library">
         <div className="library-header">
-          <div className="library-title"><h1 className="sr-only">Library</h1><p className="library-count" role="status">{filtered.length} {filtered.length===1?'video':'videos'}</p></div>
-          <nav className="library-tabs" aria-label="Browse videos" data-selected={scope?undefined:view}><span className="tab-pill" aria-hidden="true"/>{destinations.map(({id,label,icon:Icon})=><button key={id} aria-label={label} title={label} className={view===id&&!scope?'selected':''} aria-pressed={view===id&&!scope} onClick={()=>selectView(id)}><Icon size={20} aria-hidden="true"/></button>)}</nav>
-          <div className="search-box"><Search size={16} aria-hidden="true"/><input type="search" inputMode="search" name="video-search" autoComplete="off" spellCheck={false} aria-label="Search videos" placeholder="Search…" value={query} onChange={e => setQuery(e.target.value)}/>{query && <button aria-label="Clear search" onClick={() => setQuery('')}><X size={15} aria-hidden="true"/></button>}</div>
+          <div className="library-title"><h1 className="sr-only">Library</h1><p className="library-count" role="status">{filtered.length} {filtered.length===1?'track':'tracks'}</p></div>
+          <nav className="library-tabs" aria-label="Browse library" data-selected={scope?undefined:view}><span className="tab-pill" aria-hidden="true"/>{destinations.map(({id,label,icon:Icon})=><button key={id} aria-label={label} title={label} className={view===id&&!scope?'selected':''} aria-pressed={view===id&&!scope} onClick={()=>selectView(id)}><Icon size={20} aria-hidden="true"/></button>)}</nav>
+          <div className="search-box"><Search size={16} aria-hidden="true"/><input type="search" inputMode="search" name="media-search" autoComplete="off" spellCheck={false} aria-label="Search tracks" placeholder="Search…" value={query} onChange={e => setQuery(e.target.value)}/>{query && <button aria-label="Clear search" onClick={() => setQuery('')}><X size={15} aria-hidden="true"/></button>}</div>
         </div>
 
         {collections.find(c=>c.id===scope)?.kind==='playlist'&&<button className="secondary-button playlist-play" disabled={!filtered.length} onClick={()=>void openItem(filtered[0],true)}>Play playlist</button>}
@@ -683,7 +683,7 @@ export default function App() {
       <label className="setting-row"><span>Autoplay next</span><input type="checkbox" role="switch" aria-label="Autoplay next" checked={prefs.autoAdvance} onChange={e=>setPrefs({...prefs,autoAdvance:e.target.checked})}/></label>
       <label className="setting-row"><span>Repeat</span><select aria-label="Repeat" value={prefs.repeat} onChange={e=>setPrefs({...prefs,repeat:e.target.value as Preferences['repeat']})}><option value="off">Off</option><option value="one">Repeat one</option><option value="all">Repeat all</option></select></label>
       </div>
-      {window.videe?.platform === 'win32' && <section className="settings-section" aria-label="Video diagnostics"><h3>Video diagnostics</h3><div className="settings-group"><div className="setting-row"><span>Video decoding<small>{gpuStatus ? gpuStatusLabel(gpuStatus.videoDecode) : 'Checking graphics support…'}</small></span><button className="secondary-button" disabled={gpuLoading} onClick={() => void refreshGpuStatus()}>{gpuLoading ? 'Checking…' : 'Refresh'}</button></div>{gpuStatus && <div className="diagnostic-details"><span>GPU compositing: {gpuStatusLabel(gpuStatus.gpuCompositing)}</span><span>Rasterization: {gpuStatusLabel(gpuStatus.rasterization)}</span></div>}</div><p className="setting-note">If video decoding falls back to software, update the graphics driver or select the high-performance GPU in Windows.</p></section>}
+      {window.videe?.platform === 'win32' && <section className="settings-section" aria-label="Playback diagnostics"><h3>Playback diagnostics</h3><div className="settings-group"><div className="setting-row"><span>Hardware decoding<small>{gpuStatus ? gpuStatusLabel(gpuStatus.videoDecode) : 'Checking graphics support…'}</small></span><button className="secondary-button" disabled={gpuLoading} onClick={() => void refreshGpuStatus()}>{gpuLoading ? 'Checking…' : 'Refresh'}</button></div>{gpuStatus && <div className="diagnostic-details"><span>GPU compositing: {gpuStatusLabel(gpuStatus.gpuCompositing)}</span><span>Rasterization: {gpuStatusLabel(gpuStatus.rasterization)}</span></div>}</div><p className="setting-note">If hardware decoding falls back to software, update the graphics driver or select the high-performance GPU in Windows.</p></section>}
       {!nativeShell && <a className="setting-action" href={siteHref}>Get the app</a>}
       </section><SecuritySettings/><div className="app-about"><img src="./icon.png" width="46" height="46" alt=""/><div><strong translate="no">Melodee</strong><span>Version {appPackage.version}</span></div></div>
       <details className="help-details"><summary>Shortcuts</summary><div className="shortcuts">{([['Play / pause',['space']],['Seek',['left','right']],['Volume',['up','down']],['Jump',['0–9']],['Speed',['[',']']],['Frame',[',','.']],['Full screen',['F']],['Mute',['M']],['Subtitles',['C']],['Exit full screen',['esc']]] as const).map(([label,keys]) => <div key={label}><span>{label}</span><ShortcutKeys keys={[...keys]}/></div>)}</div></details>
@@ -700,7 +700,7 @@ export default function App() {
       <button className="secondary-button subtitle-import" onClick={() => subtitleRef.current?.click()}><FolderOpen size={17}/>{subtitle?.url ? 'Replace subtitles' : 'Open subtitles'}</button>
       {!subtitle && !embeddedTracks.length && <p className="subtle-text">No embedded subtitles. Open a .srt or .vtt file.</p>}
     </Modal>}
-    {info && <Modal title="Video info" onClose={()=>setInfoId(null)}><p className="delete-filename">{info.name}</p><dl className="info-list"><div><dt>Size</dt><dd>{sizeLabel(info.size)}</dd></div><div><dt>Duration</dt><dd>{info.duration?timeLabel(info.duration):'—'}</dd></div><div><dt>Position</dt><dd>{timeLabel(info.position)}</dd></div><div><dt>Added</dt><dd>{new Intl.DateTimeFormat(undefined,{dateStyle:'medium'}).format(info.added)}</dd></div><div><dt>Location</dt><dd>{info.native?'File':'Library'}</dd></div></dl></Modal>}
-    {deleteIds && deleteIds.length > 0 && <Modal title="Remove from library" onClose={() => setDeleteIds(null)}><p className="delete-filename">{deleteIds.length === 1 ? (items.find(item => item.id === deleteIds[0])?.name || 'This video') : `${deleteIds.length} videos`}</p><p className="subtle-text">{deleteIds.length === 1 ? 'The original file stays.' : 'Original files stay.'}</p><div className="modal-actions"><button className="secondary-button" onClick={() => setDeleteIds(null)}>Cancel</button><button className="danger-button" onClick={() => void confirmDelete()}>Remove</button></div></Modal>}
+    {info && <Modal title="Track info" onClose={()=>setInfoId(null)}><p className="delete-filename">{info.name}</p><dl className="info-list"><div><dt>Size</dt><dd>{sizeLabel(info.size)}</dd></div><div><dt>Duration</dt><dd>{info.duration?timeLabel(info.duration):'—'}</dd></div><div><dt>Position</dt><dd>{timeLabel(info.position)}</dd></div><div><dt>Added</dt><dd>{new Intl.DateTimeFormat(undefined,{dateStyle:'medium'}).format(info.added)}</dd></div><div><dt>Location</dt><dd>{info.native?'File':'Library'}</dd></div></dl></Modal>}
+    {deleteIds && deleteIds.length > 0 && <Modal title="Remove from library" onClose={() => setDeleteIds(null)}><p className="delete-filename">{deleteIds.length === 1 ? (items.find(item => item.id === deleteIds[0])?.name || 'This track') : `${deleteIds.length} tracks`}</p><p className="subtle-text">{deleteIds.length === 1 ? 'The original file stays.' : 'Original files stay.'}</p><div className="modal-actions"><button className="secondary-button" onClick={() => setDeleteIds(null)}>Cancel</button><button className="danger-button" onClick={() => void confirmDelete()}>Remove</button></div></Modal>}
   </div>;
 }

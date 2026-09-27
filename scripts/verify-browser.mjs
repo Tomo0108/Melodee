@@ -9,9 +9,9 @@ try {
   await page.goto('http://127.0.0.1:5173');
   await page.waitForFunction(()=>!document.querySelector('.header-open')?.disabled);
   assert.equal(await page.locator('.library-section').count(),1);
-  assert.equal(await page.getByRole('heading',{name:'No videos',exact:true}).count(),1);
+  assert.equal(await page.getByRole('heading',{name:'No tracks',exact:true}).count(),1);
   assert.equal(await page.getByRole('button',{name:'Open folder',exact:true}).count(),1);
-  assert.equal(await page.getByRole('button',{name:'Open video',exact:true}).count(),1);
+  assert.equal(await page.getByRole('button',{name:'Open tracks',exact:true}).count(),1);
   assert.equal(await page.getByRole('slider').count(),0);
   assert.equal(await page.locator('.sidebar,.queue-panel,.filter-row,.playback-bar').count(),0);
   await page.screenshot({path:'/tmp/videe-redesign-empty.png',fullPage:true});
@@ -50,8 +50,8 @@ try {
   await page.getByRole('button',{name:'Add sample.mp4 to favorites',exact:true}).click();
   await page.getByRole('button',{name:'Favorites',exact:true}).click();
   assert.equal(await page.locator('.video-card').count(),1);
-  await page.getByRole('searchbox',{name:'Search videos'}).fill('absent');
-  await page.getByText('No videos found').waitFor();
+  await page.getByRole('searchbox',{name:'Search tracks'}).fill('absent');
+  await page.getByText('No tracks found').waitFor();
   await page.getByRole('button',{name:'Clear search'}).click();
   await page.setViewportSize({width:1440,height:940});
   await page.screenshot({path:'/tmp/videe-redesign-library.png',fullPage:true});
@@ -70,10 +70,10 @@ try {
   await page.getByRole('button',{name:'Remove',exact:true}).click();
   await dialogGone();
   await page.getByRole('button',{name:'Open folder',exact:true}).first().waitFor();
-  await page.getByRole('heading',{name:'No videos',exact:true}).waitFor();
+  await page.getByRole('heading',{name:'No tracks',exact:true}).waitFor();
   await page.reload();
   await page.getByRole('button',{name:'Open folder',exact:true}).first().waitFor();
-  await page.getByRole('heading',{name:'No videos',exact:true}).waitFor();
+  await page.getByRole('heading',{name:'No tracks',exact:true}).waitFor();
   assert.deepEqual(errors,[]);
   console.log('PASS: simplified empty/library/player flows, playback, seek, explicit speed selection, subtitles, fullscreen, favorites, search, persisted resume/settings, mobile layout, deletion; no runtime errors.');
 } catch(error) { await page.screenshot({path:'/tmp/videe-redesign-failure.png',fullPage:true}); throw error; }

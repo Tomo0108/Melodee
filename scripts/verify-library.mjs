@@ -25,7 +25,7 @@ try {
   await page.getByRole('button',{name:'Back to library'}).click();
   await page.getByRole('button',{name:/Continue watching/}).filter({visible:true}).click();
   assert.equal(await page.locator('.video-card').count(),1);
-  await page.getByRole('button',{name:/All videos/}).filter({visible:true}).click();
+  await page.getByRole('button',{name:/All tracks/}).filter({visible:true}).click();
   await page.getByRole('button',{name:'Name',exact:true}).click();
   assert.equal(await page.locator('.video-title').first().innerText(),'Alpha');
   await page.getByRole('button',{name:'Grid view',exact:true}).click();
@@ -63,7 +63,7 @@ try {
   await page.reload();
   await page.getByRole('button',{name:/Continue watching/}).filter({visible:true}).click();
   await page.getByText('Nothing to continue').waitFor();
-  await page.getByRole('button',{name:/All videos/}).filter({visible:true}).click();
+  await page.getByRole('button',{name:/All tracks/}).filter({visible:true}).click();
   await page.getByRole('button',{name:'Grid view',exact:true}).click();
   await page.screenshot({path:'/tmp/videe-library-dark.png',fullPage:true});
   await page.setViewportSize({width:390,height:844});

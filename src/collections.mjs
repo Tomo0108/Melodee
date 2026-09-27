@@ -44,7 +44,7 @@ export function placeInFolders(collections, groups, rootName = '') {
   return { collections: next, folderId: folder?.id || '' };
 }
 
-/** Put videos in a folder named after the import source. Same name merges; folders stay exclusive. */
+/** Put tracks in a folder named after the import source. Same name merges; folders stay exclusive. */
 export function placeInFolder(collections, name, ids) {
   const trimmed = String(name || '').trim().slice(0, 80);
   const unique = [...new Set(ids.filter(id => typeof id === 'string' && id))];
@@ -68,7 +68,7 @@ export function placeInFolder(collections, name, ids) {
   };
 }
 
-/** Move videos into a folder or playlist. Empty `dest` removes them from folders. */
+/** Move tracks into a folder or playlist. Empty `dest` removes them from folders. */
 export function moveToFolder(collections, ids, dest) {
   const unique = [...new Set(ids.filter(id => typeof id === 'string' && id))];
   if (!unique.length) return collections;

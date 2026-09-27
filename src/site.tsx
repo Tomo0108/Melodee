@@ -95,7 +95,7 @@ function Site() {
       <main id="main" tabIndex={-1}>
         <section className="hero" aria-labelledby="hero-title">
           <div className="hero-copy">
-            <p className="spec">Your local video player</p>
+            <p className="spec">Your local media player</p>
             <h1 id="hero-title">Melodee</h1>
             <div className="hero-actions">
               <a className="hero-download" href={href}>
@@ -117,7 +117,7 @@ function Site() {
           <div className="section-heading"><h2 id="features-title">Features</h2></div>
           <div className="feature-list">
             <article><FolderOpen aria-hidden="true" size={26} strokeWidth={1.5} /><h3>Library</h3><p>Keep local files, folders, playlists, and favorites together.</p></article>
-            <article><History aria-hidden="true" size={26} strokeWidth={1.5} /><h3>Resume</h3><p>Pick up each video exactly where you left off.</p></article>
+            <article><History aria-hidden="true" size={26} strokeWidth={1.5} /><h3>Resume</h3><p>Pick up each track exactly where you left off.</p></article>
             <article><Captions aria-hidden="true" size={26} strokeWidth={1.5} /><h3>Subtitles</h3><p>Use embedded captions or add SRT and WebVTT files.</p></article>
           </div>
         </section>

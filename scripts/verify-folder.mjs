@@ -35,7 +35,7 @@ try {
   await page.locator('.organization summary[aria-label="Collection"]').click();
   await page.locator('.organization .choice-options').getByRole('button', { name: basename(root), exact: true }).click();
   const videoChooserPromise = page.waitForEvent('filechooser');
-  await page.getByRole('button', { name: 'Open video', exact: true }).click();
+  await page.getByRole('button', { name: 'Open tracks', exact: true }).click();
   await (await videoChooserPromise).setFiles(resolve('tests/fixtures/sample.mp4'));
   await page.waitForFunction(() => document.querySelectorAll('.video-card').length === 2);
   await page.getByRole('button', { name: 'Duration', exact: true }).click();
@@ -62,7 +62,7 @@ try {
   await page.locator('.library-selection').getByRole('button', { name: 'Remove from library', exact: true }).click();
   await page.locator('dialog.modal').getByRole('button', { name: 'Remove', exact: true }).click();
   await page.locator('dialog.modal').waitFor({ state: 'detached' });
-  await page.getByRole('heading', { name: 'No videos' }).waitFor();
+  await page.getByRole('heading', { name: 'No tracks' }).waitFor();
   await page.getByRole('button', { name: 'Open folder', exact: true }).waitFor();
   console.log('PASS: Nested folders import separately, deleting a folder removes its videos, and selected videos can be removed together.');
 } catch (error) {

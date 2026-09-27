@@ -58,7 +58,7 @@ try {
   await page.screenshot({path:'/tmp/videe-playback-mobile.png',fullPage:true});
   // A one-item filtered queue must also repeat, without loading a new source.
   await page.getByRole('button',{name:'Back to library'}).click();
-  await page.getByRole('searchbox',{name:'Search videos'}).fill('First');
+  await page.getByRole('searchbox',{name:'Search tracks'}).fill('First');
   await page.getByRole('button',{name:'Play First.mp4'}).click();await finish();
   await page.waitForFunction(()=>{const v=document.querySelector('video');return v.currentTime<2&&!v.paused;});
   await page.locator('video').evaluate(v=>v.pause());

@@ -36,7 +36,7 @@ try {
   assert.equal(await page.locator('video').evaluate(v => v.playbackRate), 1.25);
   await page.getByRole('button', { name: 'Back to library' }).click();
   await page.locator('.library-section').waitFor();
-  assert.equal(await page.getByRole('heading', { name: 'All videos', exact: true }).count(), 0);
+  assert.equal(await page.getByRole('heading', { name: 'All tracks', exact: true }).count(), 0);
   assert.equal(await page.locator('.library-sidebar nav button').first().innerText(), '');
   assert.equal(await page.locator('.library-tabs button').first().innerText(), '');
   assert.equal(await page.locator('.library-count').isVisible(), true);
@@ -47,7 +47,7 @@ try {
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('.file-menu').getAttribute('open'), null);
   assert.equal(await menu.evaluate(el => el === document.activeElement), true);
-  await page.getByRole('searchbox', { name: 'Search videos' }).fill('missing');
+  await page.getByRole('searchbox', { name: 'Search tracks' }).fill('missing');
   await page.getByRole('button', { name: 'Reset search' }).click();
   assert.equal(await page.locator('.video-card').count(), 1);
   for (const theme of ['light', 'dark']) {

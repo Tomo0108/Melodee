@@ -26,7 +26,7 @@ export function githubReleaseNotes(version) {
 
 Native Melodee builds for Mac, Windows, and iOS sideload.
 
-The web player copies videos into browser storage. These apps open local files instead.
+The web player copies media into browser storage. These apps open local files instead.
 
 macOS is unsigned: Control-click Open. Windows may show SmartScreen. iOS IPA is for AltStore or Sideloadly.`;
 }
@@ -48,8 +48,8 @@ export function altstoreSource({ sourceURL = ALTSTORE_JSON, iconURL = `${SITE_OR
       name: 'Melodee',
       bundleIdentifier: 'app.melodee.player',
       developerName: 'Melodee',
-      subtitle: 'Your local video player',
-      localizedDescription: 'Play video files stored on your device. Melodee is available for macOS, Windows, and iOS.',
+      subtitle: 'Your local media player',
+      localizedDescription: 'Play media stored on your device. Melodee is available for macOS, Windows, and iOS.',
       iconURL,
       tintColor: '1F5FD0',
       category: 'entertainment',

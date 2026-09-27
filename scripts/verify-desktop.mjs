@@ -10,7 +10,7 @@ try {
   const gpuStatus = await page.evaluate(() => window.videe?.getGpuStatus());
   assert.equal(typeof gpuStatus?.videoDecode, 'string');
   await app.evaluate(({dialog},file)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[file]});},resolve('tests/fixtures/legacy.avi'));
-  await page.getByRole('button',{name:'Open video',exact:true}).click();
+  await page.getByRole('button',{name:'Open tracks',exact:true}).click();
   await page.getByRole('button',{name:'Convert & play',exact:true}).waitFor();
   await page.getByRole('button',{name:'Convert & play',exact:true}).click();
   await page.waitForFunction(()=>{const v=document.querySelector('video');return v&&v.currentSrc.includes("converted=")&&!v.error&&v.readyState>=2&&v.currentTime>0.2;},null,{timeout:60000});
