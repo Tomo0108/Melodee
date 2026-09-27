@@ -115,7 +115,7 @@ app.whenReady().then(async () => {
     };
   });
   register('pick-files', async () => {
-    const result = await dialog.showOpenDialog(win, { title: 'Open tracks', properties: ['openFile', 'multiSelections'], filters: [{ name: 'Audio', extensions: ['mp1','mp2','mp3','m4a','m4b','mp4','aac','alac','ogg','oga','opus','flac','wv','wav','wave','w64','rf64','aiff','aif','au','snd','wma','ac3','dts','mpc','mpp','mp+','spx','ape','tak','mka','mkv','webm','ts'] }] });
+    const result = await dialog.showOpenDialog(win, { title: 'Open media', properties: ['openFile', 'multiSelections'], filters: [{ name: 'Media', extensions: ['mp1','mp2','mp3','m4a','m4b','mp4','aac','alac','ogg','oga','opus','flac','wv','wav','wave','w64','rf64','aiff','aif','au','snd','wma','ac3','dts','mpc','mpp','mp+','spx','ape','tak','mka','mkv','webm','mov','3g2','rmvb','ts'] }] });
     if (result.canceled) return null;
     return importPaths(result.filePaths);
   });

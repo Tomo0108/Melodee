@@ -1,10 +1,13 @@
 import { RELEASE_REPO } from './release.mjs';
 
-export const SITE_ORIGIN = 'https://videe-zeta.vercel.app';
+// Override this for a custom domain in Vercel. The default is the canonical
+// Melodee production URL, not an ephemeral preview deployment.
+export const SITE_ORIGIN = globalThis.process?.env?.VITE_SITE_ORIGIN || import.meta.env?.VITE_SITE_ORIGIN || 'https://melodee.vercel.app';
 export const ALTSTORE_JSON = `${SITE_ORIGIN}/altstore.json`;
 export const ALTSTORE_ADD = `altstore://source?url=${encodeURIComponent(ALTSTORE_JSON)}`;
 
 const NOTES = {
+  '0.1.7': 'Melodee branding throughout, improved folder imports, richer folder-loading feedback, and more reliable video handling.',
   '0.1.6': 'Smoother 4K playback, direct file import, and broader video-format support.',
   '0.1.5': 'Bulk library removal, nested folder import, and deleting a folder also removes its videos.',
   '0.1.4': 'Sortable library lists with duration and size, per-folder order, and an info button for file details.',
@@ -45,8 +48,8 @@ export function altstoreSource({ sourceURL = ALTSTORE_JSON, iconURL = `${SITE_OR
       name: 'Melodee',
       bundleIdentifier: 'app.melodee.player',
       developerName: 'Melodee',
-      subtitle: 'A local video player',
-      localizedDescription: 'Play videos that already live on this device. Install with AltStore, Sideloadly, or Finder.',
+      subtitle: 'Your local video player',
+      localizedDescription: 'Play video files stored on your device. Melodee is available for macOS, Windows, and iOS.',
       iconURL,
       tintColor: '1F5FD0',
       category: 'entertainment',

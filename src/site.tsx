@@ -82,8 +82,8 @@ function Site() {
     <div className="site">
       <a className="skip-link" href="#main">Skip to content</a>
       <header className="site-header">
-        <a className="brand" href={homeHref} aria-label="Videe home">
-          <img src="./icon.png" width="32" height="32" alt="" /><span translate="no">Videe</span>
+        <a className="brand" href={homeHref} aria-label="Melodee home">
+          <img src="./icon.png" width="32" height="32" alt="" /><span translate="no">Melodee</span>
         </a>
         <nav className="site-nav" aria-label="Primary">
           <a href="#features">Features</a>
@@ -95,8 +95,8 @@ function Site() {
       <main id="main" tabIndex={-1}>
         <section className="hero" aria-labelledby="hero-title">
           <div className="hero-copy">
-            <p className="spec">Local video player</p>
-            <h1 id="hero-title">Videe</h1>
+            <p className="spec">Your local video player</p>
+            <h1 id="hero-title">Melodee</h1>
             <div className="hero-actions">
               <a className="hero-download" href={href}>
                 <Icon size={19} strokeWidth={1.8} aria-hidden="true" />
@@ -116,9 +116,9 @@ function Site() {
         <section className="features" id="features" aria-labelledby="features-title">
           <div className="section-heading"><h2 id="features-title">Features</h2></div>
           <div className="feature-list">
-            <article><FolderOpen aria-hidden="true" size={26} strokeWidth={1.5} /><h3>Library</h3><p>Local files, search, and favorites.</p></article>
-            <article><History aria-hidden="true" size={26} strokeWidth={1.5} /><h3>Resume</h3><p>Continue from the last position.</p></article>
-            <article><Captions aria-hidden="true" size={26} strokeWidth={1.5} /><h3>Subtitles</h3><p>SRT and WebVTT.</p></article>
+            <article><FolderOpen aria-hidden="true" size={26} strokeWidth={1.5} /><h3>Library</h3><p>Keep local files, folders, playlists, and favorites together.</p></article>
+            <article><History aria-hidden="true" size={26} strokeWidth={1.5} /><h3>Resume</h3><p>Pick up each video exactly where you left off.</p></article>
+            <article><Captions aria-hidden="true" size={26} strokeWidth={1.5} /><h3>Subtitles</h3><p>Use embedded captions or add SRT and WebVTT files.</p></article>
           </div>
         </section>
 
@@ -143,7 +143,7 @@ function Site() {
       </main>
 
       <footer className="site-footer">
-        <a className="brand" href={homeHref}><span>Videe</span><small>{version}</small></a>
+        <a className="brand" href={homeHref}><span>Melodee</span><small>{version}</small></a>
         <nav aria-label="Footer">
           <a href={`https://github.com/${RELEASE_REPO}`} rel="noreferrer">GitHub</a>
           <a href={playerHref}>Web player</a>

@@ -12,8 +12,8 @@ test('icons are square and consistent across web and iOS',()=>{
   assert.notDeepEqual(rounded,read('public/icon.png'));
   for(const size of [32,180,192,512]) assert.deepEqual(pngSize(read(`public/icons/icon-${size}.png`)),[size,size]);
   const manifest=JSON.parse(read('public/manifest.webmanifest'));
-  assert.equal(manifest.name,'Videe');
-  assert.equal(manifest.short_name,'Videe');
+  assert.equal(manifest.name,'Melodee');
+  assert.equal(manifest.short_name,'Melodee');
   assert.equal(manifest.display,'standalone');
   for(const entry of manifest.icons) {
     assert.equal(pngSize(read('public/'+entry.src)).join('x'),entry.sizes);
@@ -21,7 +21,7 @@ test('icons are square and consistent across web and iOS',()=>{
     assert.doesNotMatch(entry.src,/maskable/);
   }
   const html=read('index.html').toString();
-  assert.match(html,/<title>Videe<\/title>/);
+  assert.match(html,/<title>Melodee<\/title>/);
   assert.match(html,/icons\/icon-180\.png/);
   assert.match(html,/apple-mobile-web-app-capable/);
   assert.doesNotMatch(html,/personal cinema|Just press play|apple-touch-icon\.png/);

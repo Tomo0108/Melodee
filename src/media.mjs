@@ -2,8 +2,10 @@
 // to a broadly compatible MP4 when its codecs are not supported by the player.
 // Broad local-audio intake, aligned with the formats foobar2000 supports natively.
 // Formats that Chromium cannot decode are handled by the desktop conversion path.
-export const EXTENSIONS = ['mp1','mp2','mp3','m4a','m4b','mp4','aac','alac','ogg','oga','opus','flac','wv','wav','wave','w64','rf64','aiff','aif','au','snd','wma','ac3','dts','mpc','mpp','mp+','spx','ape','tak','mka','mkv','webm','ts'];
-export function isAudio(name, type = '') { return type.startsWith('audio/') || EXTENSIONS.includes(name.split('.').pop()?.toLowerCase()); }
+export const EXTENSIONS = ['mp1','mp2','mp3','m4a','m4b','mp4','aac','alac','ogg','oga','opus','flac','wv','wav','wave','w64','rf64','aiff','aif','au','snd','wma','ac3','dts','mpc','mpp','mp+','spx','ape','tak','mka','mkv','webm','mov','3g2','rmvb','ts'];
+export function isMedia(name, type = '') { return type.startsWith('audio/') || type.startsWith('video/') || EXTENSIONS.includes(name.split('.').pop()?.toLowerCase()); }
+export const isAudio = isMedia;
+export const isVideo = isMedia;
 export async function filesFromDirectory(handle, acc = [], depth = 0, prefix = handle.name || '') {
   if (acc.length >= 1000 || depth > 8) return acc;
   for await (const entry of handle.values()) {

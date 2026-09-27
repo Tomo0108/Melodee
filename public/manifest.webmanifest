@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "Videe",
-  "short_name": "Videe",
-  "description": "Videe",
+  "name": "Melodee",
+  "short_name": "Melodee",
+  "description": "Your local video player",
   "lang": "en",
   "dir": "ltr",
   "start_url": "./app.html",

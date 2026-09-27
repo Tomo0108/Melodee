@@ -78,6 +78,19 @@ svg { flex-shrink: 0; }
 .brand img { width: 30px; height: 30px; border-radius: 9px; box-shadow: 0 2px 5px #00183820; }
 .brand span { line-height: var(--leading-title3); font-size: var(--type-title3); font-weight: 600; letter-spacing: normal; }
 .header-actions { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.folder-import { position: fixed; z-index: 9; top: 88px; left: 50%; display: flex; align-items: center; gap: 14px; width: min(430px, calc(100vw - 32px)); padding: 14px 16px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); transform: translateX(-50%); animation: melodee-folder-import-in var(--duration-sheet) var(--ease-out) both; }
+.folder-import strong, .folder-import span { display: block; }
+.folder-import strong { font-size: var(--type-body); line-height: var(--leading-body); }
+.folder-import span { margin-top: 2px; color: var(--muted); font-size: var(--type-caption); line-height: var(--leading-caption); }
+.folder-import-orbit { position: relative; display: grid; flex: 0 0 42px; width: 42px; height: 42px; place-items: center; color: var(--accent); background: var(--selected); border-radius: 14px; }
+.folder-import-orbit i { position: absolute; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: melodee-folder-orbit 1.35s var(--ease-out) infinite; }
+.folder-import-orbit i:nth-of-type(1) { animation-delay: 0s; }
+.folder-import-orbit i:nth-of-type(2) { animation-delay: -.45s; }
+.folder-import-orbit i:nth-of-type(3) { animation-delay: -.9s; }
+.folder-import-files { display: grid; gap: 4px; margin-left: auto; }
+.folder-import-files i { display: block; width: 32px; height: 4px; border-radius: 999px; background: var(--group); transform-origin: left; animation: melodee-folder-file 1.15s var(--ease-out) infinite both; }
+.folder-import-files i:nth-child(2) { width: 23px; animation-delay: -.23s; }
+.folder-import-files i:nth-child(3) { width: 27px; animation-delay: -.46s; }
 .icon-button { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; padding: 0; border-radius: 50%; color: var(--muted); flex-shrink: 0; }
 .icon-button:hover:not(:disabled) { background: var(--hover); color: var(--ink); }
 .header-actions > .icon-button, .player-heading > .icon-button { background: var(--group); border: 1px solid var(--line); box-shadow: var(--glass-shadow); color: var(--ink); }
@@ -434,6 +447,9 @@ kbd { font: inherit; color: var(--ink); background: var(--group); border: 1px so
 @keyframes videe-card-grid { from { opacity: 0; scale: .92; } to { opacity: 1; scale: 1; } }
 @keyframes videe-card-list { from { opacity: 0; translate: 0 18px; } to { opacity: 1; translate: 0 0; } }
 @keyframes videe-heading-in { from { opacity: 0; translate: -10px 0; } to { opacity: 1; translate: 0 0; } }
+@keyframes melodee-folder-import-in { from { opacity: 0; transform: translate(-50%, -10px) scale(.98); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
+@keyframes melodee-folder-orbit { 0%, 100% { transform: translate(0, -15px) scale(.75); opacity: .3; } 33% { transform: translate(13px, 8px) scale(1); opacity: 1; } 66% { transform: translate(-13px, 8px) scale(.75); opacity: .55; } }
+@keyframes melodee-folder-file { 0%, 100% { transform: scaleX(.58); opacity: .42; } 50% { transform: scaleX(1); opacity: 1; } }
 .video-grid[data-slide] .video-card { animation: videe-card-in var(--duration-view) var(--ease-spring) both; }
 .video-grid[data-slide=fwd] .video-card { animation-name: videe-card-fwd; }
 .video-grid[data-slide=back] .video-card { animation-name: videe-card-back; }
@@ -472,6 +488,9 @@ kbd { font: inherit; color: var(--ink); background: var(--group); border: 1px so
 :root[data-motion=off] .no-results,
 :root[data-motion=off] .video-card,
 :root[data-motion=off] .loading-overlay,
+:root[data-motion=off] .folder-import,
+:root[data-motion=off] .folder-import-orbit i,
+:root[data-motion=off] .folder-import-files i,
 :root[data-motion=off] .player-error,
 :root[data-motion=off] .library-sidebar nav button.selected svg,
 :root[data-motion=off] .library-tabs button.selected svg,

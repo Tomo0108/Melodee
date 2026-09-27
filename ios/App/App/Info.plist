@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>Videe</string>
+        <string>Melodee</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -69,9 +69,9 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Videe opens videos you choose from your library.</string>
+	<string>Melodee opens videos you choose from your library.</string>
 	<key>NSDocumentsFolderUsageDescription</key>
-	<string>Videe opens video files stored on this device.</string>
+	<string>Melodee opens video files stored on this device.</string>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
 	<key>UIFileSharingEnabled</key>

@@ -49,7 +49,7 @@ try {
  await page.getByRole('slider',{name:'Segment end',exact:true}).fill('3');
  await page.getByRole('button',{name:'Delete selected segment',exact:true}).click();
  await page.getByRole('button',{name:'Remove',exact:true}).click();
- await page.getByText('Removing a segment needs the Videe app.').waitFor();
+ await page.getByText('Removing a segment needs the Melodee app.').waitFor();
  await dialogGone();
  await page.getByRole('button',{name:'Remove segment',exact:true}).click();
  await page.setViewportSize({width:390,height:844});

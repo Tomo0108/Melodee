@@ -60,7 +60,7 @@ export default function App() {
   const [infoId, setInfoId] = useState<string|null>(null);
   const queue = useRef<string[]>([]); const visibleIds = useRef<string[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null); const [source, setSource] = useState(''); const [playing,setPlaying] = useState(false); const [position,setPosition] = useState(0); const [duration,setDuration] = useState(0);
-  const [muted,setMuted] = useState(false); const [error,setError] = useState(''); const [loading,setLoading] = useState(false); const [busy,setBusy] = useState(false); const [conversion,setConversion] = useState<number | null>(null);
+  const [muted,setMuted] = useState(false); const [error,setError] = useState(''); const [loading,setLoading] = useState(false); const [busy,setBusy] = useState(false); const [folderLoading,setFolderLoading] = useState(false); const [conversion,setConversion] = useState<number | null>(null);
   const [prefs,setPrefs] = useState<Preferences>(getPreferences); const [modal,setModal] = useState<'settings'|'subtitles'|'cut'|null>(null); const [deleteIds,setDeleteIds] = useState<string[]|null>(null); const [toast,setToast] = useState(''); const [dragging,setDragging] = useState(false);
   const [gpuStatus,setGpuStatus] = useState<GpuStatus|null>(null); const [gpuLoading,setGpuLoading] = useState(false);
   const [ab, setAb] = useState<{a:number|null;b:number|null}>({a:null,b:null});
@@ -245,14 +245,14 @@ export default function App() {
   const pickFolder = async () => {
     if(busy || !ready || controlsLocked) return;
     if(window.videe) {
-      setBusy(true);
+      setBusy(true); setFolderLoading(true);
       try {
         const picked = await window.videe.pickFolder();
         if(picked === null) return;
         if(!picked.records.length) { notify('No tracks in this folder.'); return; }
         await addNativeRecords(picked.records, picked.name, picked.folders || []);
       } catch { notify('Could not open this folder.'); }
-      finally { setBusy(false); }
+      finally { setBusy(false); setFolderLoading(false); }
       return;
     }
     folderRef.current?.click();
@@ -443,7 +443,7 @@ export default function App() {
     if (!activeId || cut.a === null || cut.b === null) return;
     if (!keepSegments(cut.a, cut.b, duration)) { notify('Keep at least 0.25 seconds of video.'); return; }
     setModal(null);
-    if (!window.videe?.cutVideo) { notify('Removing a segment needs the Videe app.'); return; }
+    if (!window.videe?.cutVideo) { notify('Removing a segment needs the Melodee app.'); return; }
     videoRef.current?.pause();
     setJobKind('cut'); setConversion(0);
     try {
@@ -582,8 +582,8 @@ export default function App() {
     onDragLeave={e => { e.preventDefault(); if(--dragDepth.current <= 0) { dragDepth.current=0; setDragging(false); } }}
     onDrop={e => { e.preventDefault(); dragDepth.current=0; setDragging(false); void importFiles(Array.from(e.dataTransfer.files)); }}>
     <a className="skip-link" href="#main">Skip to content</a>
-    <input ref={fileRef} className="file-input" type="file" accept="audio/*,.mp1,.mp2,.mp3,.m4a,.m4b,.mp4,.aac,.alac,.ogg,.oga,.opus,.flac,.wv,.wav,.wave,.w64,.rf64,.aiff,.aif,.au,.snd,.wma,.ac3,.dts,.mpc,.mpp,.mp+,.spx,.ape,.tak,.mka,.mkv,.webm,.ts" multiple hidden onChange={e => { void importFiles(Array.from(e.target.files || [])); e.target.value=''; }}/>
-    <input ref={bindFolderInput} className="folder-input" type="file" multiple hidden onChange={e => { const files = Array.from(e.target.files || []); e.target.value=''; if(!files.length) { notify('No tracks in this folder.'); return; } void importFiles(files); }}/>
+    <input ref={fileRef} className="file-input" type="file" accept="audio/*,video/*,.mp1,.mp2,.mp3,.m4a,.m4b,.mp4,.aac,.alac,.ogg,.oga,.opus,.flac,.wv,.wav,.wave,.w64,.rf64,.aiff,.aif,.au,.snd,.wma,.ac3,.dts,.mpc,.mpp,.mp+,.spx,.ape,.tak,.mka,.mkv,.webm,.mov,.3g2,.rmvb,.ts" multiple hidden onChange={e => { void importFiles(Array.from(e.target.files || [])); e.target.value=''; }}/>
+    <input ref={bindFolderInput} className="folder-input" type="file" multiple hidden onChange={e => { const files = Array.from(e.target.files || []); e.target.value=''; if(!files.length) { notify('No tracks in this folder.'); return; } setFolderLoading(true); void importFiles(files).finally(() => setFolderLoading(false)); }}/>
     <input ref={subtitleRef} type="file" accept=".srt,.vtt" hidden onChange={e => { void importSubtitle(e.target.files?.[0]); e.target.value=''; }}/>
     <input ref={artworkRef} type="file" accept="image/png,image/jpeg,image/webp,image/avif" hidden onChange={e => { void importArtwork(e.target.files?.[0]); e.target.value=''; }}/>
 
@@ -595,6 +595,11 @@ export default function App() {
         <IconButton icon={Settings2} label="Settings" onClick={() => setModal('settings')}/>
       </div>
     </header>
+    {folderLoading && <div className="folder-import" role="status" aria-live="polite" aria-label="Reading folder">
+      <div className="folder-import-orbit" aria-hidden="true"><FolderOpen size={24} strokeWidth={1.7}/><i/><i/><i/></div>
+      <div><strong>Reading your folder</strong><span>Finding media and building your library</span></div>
+      <div className="folder-import-files" aria-hidden="true"><i/><i/><i/></div>
+    </div>}
 
     {!active && <aside className="library-sidebar"><nav aria-label="Library navigation" data-selected={scope?undefined:view}><span className="nav-pill" aria-hidden="true"/>{destinations.map(({id,label,icon:Icon}) => <button key={id} aria-label={label} title={label} aria-pressed={view===id&&!scope} className={view===id&&!scope?'selected':''} onClick={()=>selectView(id)}><Icon size={20} aria-hidden="true"/></button>)}</nav></aside>}
     <main id="main" tabIndex={-1}>
@@ -680,12 +685,12 @@ export default function App() {
       </div>
       {window.videe?.platform === 'win32' && <section className="settings-section" aria-label="Video diagnostics"><h3>Video diagnostics</h3><div className="settings-group"><div className="setting-row"><span>Video decoding<small>{gpuStatus ? gpuStatusLabel(gpuStatus.videoDecode) : 'Checking graphics support…'}</small></span><button className="secondary-button" disabled={gpuLoading} onClick={() => void refreshGpuStatus()}>{gpuLoading ? 'Checking…' : 'Refresh'}</button></div>{gpuStatus && <div className="diagnostic-details"><span>GPU compositing: {gpuStatusLabel(gpuStatus.gpuCompositing)}</span><span>Rasterization: {gpuStatusLabel(gpuStatus.rasterization)}</span></div>}</div><p className="setting-note">If video decoding falls back to software, update the graphics driver or select the high-performance GPU in Windows.</p></section>}
       {!nativeShell && <a className="setting-action" href={siteHref}>Get the app</a>}
-      </section><SecuritySettings/><div className="app-about"><img src="./icon.png" width="46" height="46" alt=""/><div><strong translate="no">Videe</strong><span>Version {appPackage.version}</span></div></div>
+      </section><SecuritySettings/><div className="app-about"><img src="./icon.png" width="46" height="46" alt=""/><div><strong translate="no">Melodee</strong><span>Version {appPackage.version}</span></div></div>
       <details className="help-details"><summary>Shortcuts</summary><div className="shortcuts">{([['Play / pause',['space']],['Seek',['left','right']],['Volume',['up','down']],['Jump',['0–9']],['Speed',['[',']']],['Frame',[',','.']],['Full screen',['F']],['Mute',['M']],['Subtitles',['C']],['Exit full screen',['esc']]] as const).map(([label,keys]) => <div key={label}><span>{label}</span><ShortcutKeys keys={[...keys]}/></div>)}</div></details>
     </Modal>}
     {modal === 'cut' && cut.a!==null && cut.b!==null && <Modal title="Remove this part?" onClose={() => setModal(null)}>
       <p className="delete-filename">{timeLabel(cut.a)} – {timeLabel(cut.b)}</p>
-      <p className="subtle-text">The original file stays. Videe will play the edited copy.</p>
+      <p className="subtle-text">The original file stays. Melodee will play the edited copy.</p>
       <div className="modal-actions"><button className="secondary-button" onClick={() => setModal(null)}>Cancel</button><button className="danger-button" onClick={() => void confirmCut()}>Remove</button></div>
     </Modal>}
     {modal === 'subtitles' && <Modal title="Subtitles" onClose={() => setModal(null)}>

@@ -9,7 +9,7 @@ async function mediaResponse(request, filePath) {
   const info = await stat(filePath);
   if (!info.isFile()) return new Response(null, { status: 404, headers: { 'Access-Control-Allow-Origin': '*' } });
   const size = info.size;
-  const types = { '.mp1': 'audio/mpeg', '.mp2': 'audio/mpeg', '.mp3': 'audio/mpeg', '.m4a': 'audio/mp4', '.m4b': 'audio/mp4', '.mp4': 'audio/mp4', '.aac': 'audio/aac', '.alac': 'audio/mp4', '.wav': 'audio/wav', '.wave': 'audio/wav', '.flac': 'audio/flac', '.ogg': 'audio/ogg', '.oga': 'audio/ogg', '.opus': 'audio/ogg', '.aiff': 'audio/aiff', '.aif': 'audio/aiff', '.au': 'audio/basic', '.snd': 'audio/basic', '.wma': 'audio/x-ms-wma', '.ac3': 'audio/ac3', '.dts': 'audio/vnd.dts', '.webm': 'audio/webm', '.mka': 'audio/x-matroska', '.mkv': 'audio/x-matroska', '.ts': 'video/mp2t' };
+  const types = { '.mp1': 'audio/mpeg', '.mp2': 'audio/mpeg', '.mp3': 'audio/mpeg', '.m4a': 'audio/mp4', '.m4b': 'audio/mp4', '.mp4': 'video/mp4', '.mov': 'video/quicktime', '.3g2': 'video/3gpp2', '.rmvb': 'video/vnd.rn-realvideo', '.aac': 'audio/aac', '.alac': 'audio/mp4', '.wav': 'audio/wav', '.wave': 'audio/wav', '.flac': 'audio/flac', '.ogg': 'audio/ogg', '.oga': 'audio/ogg', '.opus': 'audio/ogg', '.aiff': 'audio/aiff', '.aif': 'audio/aiff', '.au': 'audio/basic', '.snd': 'audio/basic', '.wma': 'audio/x-ms-wma', '.ac3': 'audio/ac3', '.dts': 'audio/vnd.dts', '.webm': 'video/webm', '.mka': 'audio/x-matroska', '.mkv': 'video/x-matroska', '.ts': 'video/mp2t' };
   const headers = { 'Accept-Ranges': 'bytes', 'Access-Control-Allow-Origin': '*', 'Content-Type': types[extname(filePath).toLowerCase()] || 'application/octet-stream', 'Content-Length': String(size) };
   let start = 0, end = size - 1, status = 200;
   const range = request.headers.get('Range');

@@ -16,7 +16,7 @@ const fallback = altstoreSource({
 
 let source = fallback;
 try {
-  const response = await fetch(`https://api.github.com/repos/${RELEASE_REPO}/releases`, { headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'videe-altstore' } });
+  const response = await fetch(`https://api.github.com/repos/${RELEASE_REPO}/releases`, { headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'melodee-altstore' } });
   if (response.ok) {
     const versions = versionsFromReleases(await response.json());
     if (versions.length) source = altstoreSource({ versions });
