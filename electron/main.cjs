@@ -10,6 +10,7 @@ protocol.registerSchemesAsPrivileged([{ scheme: 'videe', privileges: { standard:
 if (!app.isPackaged && process.env.VIDEE_TEST_USER_DATA) app.setPath('userData', process.env.VIDEE_TEST_USER_DATA);
 let win, registry = {}, processJob, registryFile, cacheDir;
 let writeQueue = Promise.resolve();
+const macIcon = () => app.isPackaged ? join(process.resourcesPath, 'icon.icns') : join(__dirname, '../dist/icons/Videe.icns');
 function persist() { writeQueue = writeQueue.then(async () => { const tmp = registryFile + '.tmp'; await fs.writeFile(tmp, JSON.stringify(registry)); await fs.rename(tmp, registryFile); }); return writeQueue; }
 function ffmpegBinary() { return require('ffmpeg-static').replace('app.asar', 'app.asar.unpacked'); }
 function ffmpegProbe(input) {
@@ -80,7 +81,7 @@ async function importPaths(filePaths) {
   await persist(); return records;
 }
 function createWindow() {
-  win = new BrowserWindow({ ...(process.platform === 'darwin' ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 20, y: 25 } } : {}), width: 1440, height: 940, minWidth: 800, minHeight: 640, title: 'Melodee', backgroundColor: '#fafafa', icon: join(__dirname, '../dist/icons/Videe.icns'), webPreferences: { preload: join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true } });
+  win = new BrowserWindow({ ...(process.platform === 'darwin' ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 20, y: 25 } } : {}), width: 1440, height: 940, minWidth: 800, minHeight: 640, title: 'Melodee', backgroundColor: '#fafafa', icon: macIcon(), webPreferences: { preload: join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true } });
   win.setMenuBarVisibility(false);
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   win.webContents.on('will-navigate', event => event.preventDefault());
@@ -97,7 +98,7 @@ function playerHtml() {
   return join(dist, 'index.html');
 }
 app.whenReady().then(async () => {
-  if (process.platform === 'darwin') app.dock?.setIcon(join(__dirname, '../dist/icons/Videe.icns'));
+  if (process.platform === 'darwin') app.dock?.setIcon(macIcon());
   registryFile = join(app.getPath('userData'), 'library.json'); cacheDir = join(app.getPath('userData'), 'converted');
   await fs.mkdir(cacheDir, { recursive: true });
   try { registry = JSON.parse(await fs.readFile(registryFile, 'utf8')); } catch { registry = {}; }
