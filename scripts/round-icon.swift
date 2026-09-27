@@ -9,8 +9,10 @@ let context = NSGraphicsContext(bitmapImageRep: bitmap)!
 NSGraphicsContext.saveGraphicsState()
 NSGraphicsContext.current = context
 context.imageInterpolation = .high
-let bounds = NSRect(x: 32, y: 32, width: 960, height: 960)
-NSBezierPath(roundedRect: bounds, xRadius: 210, yRadius: 210).addClip()
+// Keep a transparent safety margin so Finder never renders the artwork as a
+// square tile. The large corner radius matches the macOS app-icon silhouette.
+let bounds = NSRect(x: 72, y: 72, width: 880, height: 880)
+NSBezierPath(roundedRect: bounds, xRadius: 198, yRadius: 198).addClip()
 NSColor.black.setFill()
 bounds.fill()
 NSImage(contentsOfFile: source)!.draw(in: bounds, from: .zero, operation: .sourceOver, fraction: 1)
@@ -18,5 +20,5 @@ NSGraphicsContext.restoreGraphicsState()
 // Fail generation if alpha masking regresses.
 precondition(bitmap.colorAt(x: 0, y: 0)!.alphaComponent == 0)
 precondition(bitmap.colorAt(x: 512, y: 512)!.alphaComponent == 1)
-precondition(bitmap.colorAt(x: 32, y: 32)!.alphaComponent == 0)
+precondition(bitmap.colorAt(x: 72, y: 72)!.alphaComponent == 0)
 try bitmap.representation(using: .png, properties: [:])!.write(to: URL(fileURLWithPath: destination))

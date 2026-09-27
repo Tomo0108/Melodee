@@ -15,12 +15,17 @@ try {
   execFileSync('swift',['-module-cache-path',join(temp,'swift-cache'),resolve('scripts/round-icon.swift'),source,rounded],{stdio:'pipe'});
   // iOS touch icon stays opaque. Other web surfaces use the explicit silhouette.
   for(const size of [32,180,192,512]) resize(size,join(output,`icon-${size}.png`),size===180 ? source : rounded);
-  const iconset = join(temp,'Videe.iconset'); mkdirSync(iconset);
-  for(const size of [16,32,128,256,512]) {
-    resize(size,join(iconset,`icon_${size}x${size}.png`),rounded);
-    resize(size*2,join(iconset,`icon_${size}x${size}@2x.png`),rounded);
-  }
-  execFileSync('iconutil',['-c','icns',iconset,'-o',join(output,'Videe.icns')],{stdio:'pipe'});
+  // Store PNG payloads directly in ICNS. This avoids iconutil rejecting valid
+  // iconsets on newer macOS releases while preserving every Finder resolution.
+  const icnsEntries = [['ic10',1024],['ic09',512],['ic08',256],['ic07',128],['icp6',64],['icp5',32],['icp4',16]];
+  const icnsChunks = icnsEntries.map(([type,size]) => {
+    const path = join(temp,`icns-${size}.png`); resize(size,path,rounded);
+    const image = readFileSync(path); const chunk = Buffer.alloc(8 + image.length);
+    chunk.write(String(type),0,4,'ascii'); chunk.writeUInt32BE(chunk.length,4); image.copy(chunk,8);
+    return chunk;
+  });
+  const icns = Buffer.alloc(8); icns.write('icns',0,4,'ascii'); icns.writeUInt32BE(8 + icnsChunks.reduce((sum,chunk) => sum + chunk.length,0),4);
+  writeFileSync(join(output,'Videe.icns'),Buffer.concat([icns,...icnsChunks]));
   const sizes = [16,32,48,64,128,256];
   const images = sizes.map(size=>{const path=join(temp,`${size}.png`);resize(size,path,rounded);return readFileSync(path);});
   const header = Buffer.alloc(6+16*sizes.length); header.writeUInt16LE(1,2);header.writeUInt16LE(sizes.length,4);
