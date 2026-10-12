@@ -68,6 +68,7 @@ export default function App() {
   const [chrome, setChrome] = useState(true);
   const [subtitle,setSubtitle] = useState<{url:string;name:string}|null>(null); const [captions,setCaptions] = useState(true);
   const [embeddedTracks,setEmbeddedTracks] = useState<{index:number;label:string;language:string}[]>([]);
+  const fallbackConversionFor = useRef<string | null>(null);
   const [isFullscreen,setIsFullscreen] = useState(false);
   const [videoZoom,setVideoZoom] = useState(1); const [videoPan,setVideoPan] = useState({x:0,y:0});
   const videoRef = useRef<HTMLVideoElement>(null); const stageRef = useRef<HTMLDivElement>(null); const fileRef = useRef<HTMLInputElement>(null); const folderRef = useRef<HTMLInputElement>(null); const subtitleRef = useRef<HTMLInputElement>(null); const artworkRef = useRef<HTMLInputElement>(null); const artworkTarget = useRef<string|null>(null); const activeRef = useRef(activeId); activeRef.current = activeId;
@@ -169,7 +170,7 @@ export default function App() {
     if(!activeRef.current) queue.current = visibleIds.current;
     if(!queue.current.includes(item.id)) queue.current = [...queue.current, item.id];
     saveProgress(); forceResume.current = resumePlayback; playAfterLoad.current = continuePlayback; startFromBeginning.current = continuePlayback; const sequence = ++openSequence.current;
-    setAb({a:null,b:null}); setLooping(false); setCutting(false); setCut({a:null,b:null}); setMinimized(false); setActiveId(item.id); setSource(''); setPlaying(false); setError(''); setLoading(true); setPosition(0); setDuration(0); setSubtitle(null); setEmbeddedTracks([]); setChrome(true); setVideoZoom(1); setVideoPan({x:0,y:0}); lastSave.current = 0; lastPositionPaint.current = 0;
+    setAb({a:null,b:null}); setLooping(false); setCutting(false); setCut({a:null,b:null}); fallbackConversionFor.current = null; setMinimized(false); setActiveId(item.id); setSource(''); setPlaying(false); setError(''); setLoading(true); setPosition(0); setDuration(0); setSubtitle(null); setEmbeddedTracks([]); setChrome(true); setVideoZoom(1); setVideoPan({x:0,y:0}); lastSave.current = 0; lastPositionPaint.current = 0;
     try {
       let src: string;
       if(item.native && window.videe) src = await window.videe.getSource(item.id);
@@ -482,7 +483,16 @@ export default function App() {
     if(video.requestVideoFrameCallback) video.requestVideoFrameCallback(capture); else requestAnimationFrame(()=>requestAnimationFrame(capture));
   };
   const importSubtitle = async (file?: File) => { if(!file) return; try { if(file.size > 5*1024*1024) throw new Error('Choose a subtitle file smaller than 5 MB.'); const text = toVtt(await file.text()); setSubtitle({url:URL.createObjectURL(new Blob([text],{type:'text/vtt'})),name:file.name}); setCaptions(true); } catch(e) { notify(e instanceof Error ? e.message : 'Could not load subtitles.'); } };
-  const convert = async () => { if(!active?.native || !window.videe) return; setJobKind('convert'); setConversion(0); try { const src = await window.videe.convertAudio(active.id); setError(''); setSource(src); setLoading(true); } catch(e) { notify(e instanceof Error ? e.message : 'Could not convert this track.'); } finally { setConversion(null); } };
+  const convert = async () => { if(!active?.native || !window.videe) return; setJobKind('convert'); setConversion(0); try { const src = await window.videe.convertAudio(active.id); setError(''); setSource(src); setLoading(true); } catch(e) { setError('Could not prepare a compatible version of this track.'); notify(e instanceof Error ? e.message : 'Could not convert this track.'); } finally { setConversion(null); } };
+  const handleMediaError = () => {
+    setLoading(false); setPlaying(false);
+    if (window.videe?.platform === 'win32' && active?.native && fallbackConversionFor.current !== active.id) {
+      fallbackConversionFor.current = active.id;
+      void convert();
+      return;
+    }
+    setError('This media format is not supported by this player.');
+  };
   const removeFromLibrary = async (ids: string[]) => {
     const unique = [...new Set(ids)].filter(id => itemsRef.current.some(item => item.id === id));
     if (!unique.length) { setDeleteIds(null); return; }
@@ -610,9 +620,9 @@ export default function App() {
           {minimized && <div className="mini-player-bar"><button className="mini-player-open" onClick={() => setMinimized(false)} aria-label={`Open player for ${active.name}`}><span className="mini-player-art">{active.thumbnail ? <img src={active.thumbnail} alt=""/> : <Music2 size={21} aria-hidden="true"/>}</span><span><strong>{active.name.replace(/\.[^.]+$/,'')}</strong><small>{timeLabel(position)} / {timeLabel(duration)}</small></span></button><IconButton icon={playing ? Pause : Play} label={playing ? 'Pause' : 'Play'} onClick={togglePlay} disabled={!source || !!error}/><IconButton icon={Maximize} label="Open player" onClick={() => setMinimized(false)}/></div>}
           <div className="video-surface" inert={controlsLocked}>
             <div className="now-playing-art" aria-hidden="true">{active.thumbnail ? <img src={active.thumbnail} alt=""/> : <Music2 size={88} strokeWidth={1.1}/>}</div>
-            {source && <video className="audio-source" key={source} ref={videoRef} src={source} playsInline preload="metadata" muted={muted} loop={prefs.repeat==='one' && !(looping && ab.b!==null)} data-zoomed={videoZoom>1?'' : undefined} style={{transform:`translate(${videoPan.x}px, ${videoPan.y}px) scale(${videoZoom})`}} onClick={handleVideoClick} onDoubleClick={handleVideoDoubleClick} onWheel={handleVideoWheel} onPointerDown={startVideoPan} onPointerMove={moveVideoPan} onPointerUp={endVideoPan} onPointerCancel={endVideoPan} onLoadedMetadata={loaded} onLoadedData={captureThumbnail} onSeeked={captureThumbnail} onPlay={()=>setPlaying(true)} onPause={()=>{setPlaying(false);saveProgress();}} onWaiting={()=>setLoading(true)} onPlaying={()=>setLoading(false)} onCanPlay={()=>setLoading(false)} onTimeUpdate={()=>{const t=videoRef.current?.currentTime||0;if(looping&&ab.a!==null&&ab.b!==null&&t>=ab.b){seek(ab.a);return;}if(Math.abs(t-lastPositionPaint.current)>=.25){lastPositionPaint.current=t;setPosition(t);}if(Math.abs(t-lastSave.current)>5&&activeId){lastSave.current=t;updateItem(activeId,{position:t});}}} onEnded={handleEnded} onError={()=>{setLoading(false);setPlaying(false);setError('This audio format is not supported by this player.');}}>{subtitle?.url && <track key={subtitle.url} kind="subtitles" src={subtitle.url} srcLang="ja" label={subtitle.name} default/>}</video>}
+            {source && <video className="audio-source" key={source} ref={videoRef} src={source} playsInline preload="metadata" muted={muted} loop={prefs.repeat==='one' && !(looping && ab.b!==null)} data-zoomed={videoZoom>1?'' : undefined} style={{transform:`translate(${videoPan.x}px, ${videoPan.y}px) scale(${videoZoom})`}} onClick={handleVideoClick} onDoubleClick={handleVideoDoubleClick} onWheel={handleVideoWheel} onPointerDown={startVideoPan} onPointerMove={moveVideoPan} onPointerUp={endVideoPan} onPointerCancel={endVideoPan} onLoadedMetadata={loaded} onLoadedData={captureThumbnail} onSeeked={captureThumbnail} onPlay={()=>setPlaying(true)} onPause={()=>{setPlaying(false);saveProgress();}} onWaiting={()=>setLoading(true)} onPlaying={()=>setLoading(false)} onCanPlay={()=>setLoading(false)} onTimeUpdate={()=>{const t=videoRef.current?.currentTime||0;if(looping&&ab.a!==null&&ab.b!==null&&t>=ab.b){seek(ab.a);return;}if(Math.abs(t-lastPositionPaint.current)>=.25){lastPositionPaint.current=t;setPosition(t);}if(Math.abs(t-lastSave.current)>5&&activeId){lastSave.current=t;updateItem(activeId,{position:t});}}} onEnded={handleEnded} onError={handleMediaError}>{subtitle?.url && <track key={subtitle.url} kind="subtitles" src={subtitle.url} srcLang="ja" label={subtitle.name} default/>}</video>}
             {loading && !error && conversion===null && <div className="loading-overlay" role="status"><Loader2 size={28} className="spin"/><span className="sr-only">Loading…</span></div>}
-            {conversion!==null && jobKind==='cut' && <div className="cut-progress" role="status"><Loader2 size={28} className="spin"/><span>Removing segment · {timeLabel(conversion)}</span><button className="secondary-button" onClick={() => void window.videe?.cancelConversion()}>Cancel</button></div>}
+            {conversion!==null && <div className="cut-progress" role="status"><Loader2 size={28} className="spin"/><span>{jobKind==='cut' ? 'Removing segment' : 'Preparing compatible audio'} · {timeLabel(conversion)}</span><button className="secondary-button" onClick={() => void window.videe?.cancelConversion()}>Cancel</button></div>}
             {error && <div className="player-error"><Film size={28} aria-hidden="true"/><h2>Can’t play</h2>
               <p>This audio format isn’t supported.</p>
               {active.native && (conversion !== null ? <><span className="conversion-status"><Loader2 size={16} className="spin"/>{jobKind==='cut'?'Removing segment':'Converting'} · {timeLabel(conversion)}</span><button className="secondary-button" onClick={() => void window.videe?.cancelConversion()}>Cancel</button></>
