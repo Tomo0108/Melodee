@@ -156,6 +156,13 @@ app.whenReady().then(async () => {
     const result = await runEncode(id, ['-i', registry[id].path, '-map', '0:a:0', '-vn', '-c:a', 'aac', '-b:a', '256k'], 'm4a');
     return result.src;
   });
+  register('convert-media', async id => {
+    if (!registry[id]) throw new Error('Media not found.');
+    if (processJob) throw new Error('Another item is being converted.');
+    await fs.access(ffmpegBinary());
+    const result = await runEncode(id, ['-i', registry[id].path, '-map', '0:v:0?', '-map', '0:a:0?', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '21', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k']);
+    return result.src;
+  });
   register('cut-video', async (id, start, end, duration) => {
     if (!registry[id]) throw new Error('Video not found.');
     if (processJob) throw new Error('Another video is being converted.');

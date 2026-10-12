@@ -68,7 +68,6 @@ export default function App() {
   const [chrome, setChrome] = useState(true);
   const [subtitle,setSubtitle] = useState<{url:string;name:string}|null>(null); const [captions,setCaptions] = useState(true);
   const [embeddedTracks,setEmbeddedTracks] = useState<{index:number;label:string;language:string}[]>([]);
-  const fallbackConversionFor = useRef<string | null>(null);
   const [isFullscreen,setIsFullscreen] = useState(false);
   const [videoZoom,setVideoZoom] = useState(1); const [videoPan,setVideoPan] = useState({x:0,y:0});
   const videoRef = useRef<HTMLVideoElement>(null); const stageRef = useRef<HTMLDivElement>(null); const fileRef = useRef<HTMLInputElement>(null); const folderRef = useRef<HTMLInputElement>(null); const subtitleRef = useRef<HTMLInputElement>(null); const artworkRef = useRef<HTMLInputElement>(null); const artworkTarget = useRef<string|null>(null); const activeRef = useRef(activeId); activeRef.current = activeId;
@@ -170,7 +169,7 @@ export default function App() {
     if(!activeRef.current) queue.current = visibleIds.current;
     if(!queue.current.includes(item.id)) queue.current = [...queue.current, item.id];
     saveProgress(); forceResume.current = resumePlayback; playAfterLoad.current = continuePlayback; startFromBeginning.current = continuePlayback; const sequence = ++openSequence.current;
-    setAb({a:null,b:null}); setLooping(false); setCutting(false); setCut({a:null,b:null}); fallbackConversionFor.current = null; setMinimized(false); setActiveId(item.id); setSource(''); setPlaying(false); setError(''); setLoading(true); setPosition(0); setDuration(0); setSubtitle(null); setEmbeddedTracks([]); setChrome(true); setVideoZoom(1); setVideoPan({x:0,y:0}); lastSave.current = 0; lastPositionPaint.current = 0;
+    setAb({a:null,b:null}); setLooping(false); setCutting(false); setCut({a:null,b:null}); setMinimized(false); setActiveId(item.id); setSource(''); setPlaying(false); setError(''); setLoading(true); setPosition(0); setDuration(0); setSubtitle(null); setEmbeddedTracks([]); setChrome(true); setVideoZoom(1); setVideoPan({x:0,y:0}); lastSave.current = 0; lastPositionPaint.current = 0;
     try {
       let src: string;
       if(item.native && window.videe) src = await window.videe.getSource(item.id);
@@ -483,16 +482,8 @@ export default function App() {
     if(video.requestVideoFrameCallback) video.requestVideoFrameCallback(capture); else requestAnimationFrame(()=>requestAnimationFrame(capture));
   };
   const importSubtitle = async (file?: File) => { if(!file) return; try { if(file.size > 5*1024*1024) throw new Error('Choose a subtitle file smaller than 5 MB.'); const text = toVtt(await file.text()); setSubtitle({url:URL.createObjectURL(new Blob([text],{type:'text/vtt'})),name:file.name}); setCaptions(true); } catch(e) { notify(e instanceof Error ? e.message : 'Could not load subtitles.'); } };
-  const convert = async () => { if(!active?.native || !window.videe) return; setJobKind('convert'); setConversion(0); try { const src = await window.videe.convertAudio(active.id); setError(''); setSource(src); setLoading(true); } catch(e) { setError('Could not prepare a compatible version of this track.'); notify(e instanceof Error ? e.message : 'Could not convert this track.'); } finally { setConversion(null); } };
-  const handleMediaError = () => {
-    setLoading(false); setPlaying(false);
-    if (window.videe?.platform === 'win32' && active?.native && fallbackConversionFor.current !== active.id) {
-      fallbackConversionFor.current = active.id;
-      void convert();
-      return;
-    }
-    setError('This media format is not supported by this player.');
-  };
+  const convert = async () => { if(!active?.native || !window.videe) return; setJobKind('convert'); setConversion(0); try { const src = await window.videe.convertMedia(active.id); setError(''); setSource(src); setLoading(true); } catch(e) { setError('Could not prepare a compatible version of this media.'); notify(e instanceof Error ? e.message : 'Could not convert this media.'); } finally { setConversion(null); } };
+  const handleMediaError = () => { setLoading(false); setPlaying(false); setError('This media format is not supported by this player.'); };
   const removeFromLibrary = async (ids: string[]) => {
     const unique = [...new Set(ids)].filter(id => itemsRef.current.some(item => item.id === id));
     if (!unique.length) { setDeleteIds(null); return; }

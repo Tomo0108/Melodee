@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('videe', {
   forgetVideo: id => ipcRenderer.invoke('forget-video', id),
   convertVideo: id => ipcRenderer.invoke('convert-video', id),
   convertAudio: id => ipcRenderer.invoke('convert-audio', id),
+  convertMedia: id => ipcRenderer.invoke('convert-media', id),
   cutVideo: (id, start, end, duration) => ipcRenderer.invoke('cut-video', id, start, end, duration),
   cancelConversion: () => ipcRenderer.invoke('cancel-conversion'),
   listSubtitles: id => ipcRenderer.invoke('list-subtitles', id),

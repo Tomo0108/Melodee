@@ -7,6 +7,7 @@ export const ALTSTORE_JSON = `${SITE_ORIGIN}/altstore.json`;
 export const ALTSTORE_ADD = `altstore://source?url=${encodeURIComponent(ALTSTORE_JSON)}`;
 
 const NOTES = {
+  '0.1.10': 'Windows conversion now preserves video and audio in a broadly compatible MP4. Playback never starts conversion automatically.',
   '0.1.9': 'Windows automatically prepares a compatible audio copy when a local format cannot be decoded directly.',
   '0.1.8': 'Background mini player keeps playback going while you browse the library, with updated Melodee terminology throughout.',
   '0.1.7': 'Melodee branding throughout, improved folder imports, richer folder-loading feedback, and more reliable video handling.',
