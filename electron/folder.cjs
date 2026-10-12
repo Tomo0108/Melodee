@@ -1,7 +1,7 @@
 const { readdir } = require('node:fs/promises');
 const { basename, extname, join, relative } = require('node:path');
 
-const AUDIO_EXT = new Set(['mp1','mp2','mp3','m4a','m4b','mp4','aac','alac','ogg','oga','opus','flac','wv','wav','wave','w64','rf64','aiff','aif','au','snd','wma','ac3','dts','mpc','mpp','mp+','spx','ape','tak','mka','mkv','webm','mov','3g2','rmvb','ts']);
+const AUDIO_EXT = new Set(['mp1','mp2','mp3','m4a','m4b','aac','alac','ogg','oga','opus','flac','wv','wav','wave','w64','rf64','aiff','aif','au','snd','wma','ac3','dts','mpc','mpp','mp+','spx','ape','tak','mka']);
 
 async function collectAudioPaths(root, { maxFiles = 1000, maxDepth = 8 } = {}) {
   const acc = [];

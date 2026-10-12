@@ -482,7 +482,7 @@ export default function App() {
     if(video.requestVideoFrameCallback) video.requestVideoFrameCallback(capture); else requestAnimationFrame(()=>requestAnimationFrame(capture));
   };
   const importSubtitle = async (file?: File) => { if(!file) return; try { if(file.size > 5*1024*1024) throw new Error('Choose a subtitle file smaller than 5 MB.'); const text = toVtt(await file.text()); setSubtitle({url:URL.createObjectURL(new Blob([text],{type:'text/vtt'})),name:file.name}); setCaptions(true); } catch(e) { notify(e instanceof Error ? e.message : 'Could not load subtitles.'); } };
-  const convert = async () => { if(!active?.native || !window.videe) return; setJobKind('convert'); setConversion(0); try { const src = await window.videe.convertMedia(active.id); setError(''); setSource(src); setLoading(true); } catch(e) { setError('Could not prepare a compatible version of this media.'); notify(e instanceof Error ? e.message : 'Could not convert this media.'); } finally { setConversion(null); } };
+  const convert = async () => { if(!active?.native || !window.videe) return; setJobKind('convert'); setConversion(0); try { const src = await window.videe.convertAudio(active.id); setError(''); setSource(src); setLoading(true); } catch(e) { setError('Could not prepare a compatible version of this track.'); notify(e instanceof Error ? e.message : 'Could not convert this track.'); } finally { setConversion(null); } };
   const handleMediaError = () => { setLoading(false); setPlaying(false); setError('This media format is not supported by this player.'); };
   const removeFromLibrary = async (ids: string[]) => {
     const unique = [...new Set(ids)].filter(id => itemsRef.current.some(item => item.id === id));
@@ -584,7 +584,7 @@ export default function App() {
     onDragLeave={e => { e.preventDefault(); if(--dragDepth.current <= 0) { dragDepth.current=0; setDragging(false); } }}
     onDrop={e => { e.preventDefault(); dragDepth.current=0; setDragging(false); void importFiles(Array.from(e.dataTransfer.files)); }}>
     <a className="skip-link" href="#main">Skip to content</a>
-    <input ref={fileRef} className="file-input" type="file" accept="audio/*,video/*,.mp1,.mp2,.mp3,.m4a,.m4b,.mp4,.aac,.alac,.ogg,.oga,.opus,.flac,.wv,.wav,.wave,.w64,.rf64,.aiff,.aif,.au,.snd,.wma,.ac3,.dts,.mpc,.mpp,.mp+,.spx,.ape,.tak,.mka,.mkv,.webm,.mov,.3g2,.rmvb,.ts" multiple hidden onChange={e => { void importFiles(Array.from(e.target.files || [])); e.target.value=''; }}/>
+    <input ref={fileRef} className="file-input" type="file" accept="audio/*,.mp1,.mp2,.mp3,.m4a,.m4b,.aac,.alac,.ogg,.oga,.opus,.flac,.wv,.wav,.wave,.w64,.rf64,.aiff,.aif,.au,.snd,.wma,.ac3,.dts,.mpc,.mpp,.mp+,.spx,.ape,.tak,.mka" multiple hidden onChange={e => { void importFiles(Array.from(e.target.files || [])); e.target.value=''; }}/>
     <input ref={bindFolderInput} className="folder-input" type="file" multiple hidden onChange={e => { const files = Array.from(e.target.files || []); e.target.value=''; if(!files.length) { notify('No tracks in this folder.'); return; } setFolderLoading(true); void importFiles(files).finally(() => setFolderLoading(false)); }}/>
     <input ref={subtitleRef} type="file" accept=".srt,.vtt" hidden onChange={e => { void importSubtitle(e.target.files?.[0]); e.target.value=''; }}/>
     <input ref={artworkRef} type="file" accept="image/png,image/jpeg,image/webp,image/avif" hidden onChange={e => { void importArtwork(e.target.files?.[0]); e.target.value=''; }}/>

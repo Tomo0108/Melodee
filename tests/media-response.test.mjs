@@ -5,16 +5,16 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mediaResponse } from '../electron/media-response.cjs';
 
-test('local video responses support streaming and byte-range seeks', async () => {
+test('local audio responses support streaming and byte-range seeks', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'videe-range-'));
-  const file = join(dir, 'movie.mp4');
+  const file = join(dir, 'track.m4a');
   await writeFile(file, Buffer.from('0123456789'));
   try {
     const request = range => new Request('http://localhost/movie', { headers: range ? { Range: range } : {} });
     const all = await mediaResponse(request(),file);
     assert.equal(all.headers.get('Accept-Ranges'),'bytes');
     assert.equal(all.headers.get('Access-Control-Allow-Origin'),'*');
-    assert.equal(all.headers.get('Content-Type'),'video/mp4');
+    assert.equal(all.headers.get('Content-Type'),'audio/mp4');
     assert.equal(await all.text(),'0123456789');
     for (const [range, expected, contentRange] of [
       ['bytes=3-5','345','bytes 3-5/10'],

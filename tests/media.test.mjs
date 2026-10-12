@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { timeLabel, sizeLabel, toVtt, clampTime, clipLoop, keepSegments, cutFilter, cutMaps, isVideo, filesFromDirectory, parseSubtitleStreams, subtitleLabel } from '../src/media.mjs';
+import { timeLabel, sizeLabel, toVtt, clampTime, clipLoop, keepSegments, cutFilter, cutMaps, isAudio, filesFromDirectory, parseSubtitleStreams, subtitleLabel } from '../src/media.mjs';
 test('time formatting handles unknown values and long movies', () => {
   assert.equal(timeLabel(NaN),'0:00'); assert.equal(timeLabel(Infinity),'0:00'); assert.equal(timeLabel(-1),'0:00'); assert.equal(timeLabel(65.8),'1:05'); assert.equal(timeLabel(7384),'2:03:04');
 });
@@ -37,16 +37,16 @@ test('embedded text subtitle streams are listed and image tracks are skipped', (
   ]);
   assert.equal(subtitleLabel('', 2), 'Subtitle 3');
 });
-test('video import accepts supported containers case insensitively and excludes unrelated files', () => { assert.equal(isVideo('Film.MKV'),true); assert.equal(isVideo('archive.RMVB'),true); assert.equal(isVideo('cam.3g2'),true); assert.equal(isVideo('film.odd','video/custom'),true); assert.equal(isVideo('note.txt'),false); assert.equal(sizeLabel(1024**3),'1.0 GB'); });
-test('browser folder walk collects nested videos and skips notes', async () => {
+test('audio import accepts supported music formats and rejects video files', () => { assert.equal(isAudio('Album.FLAC'),true); assert.equal(isAudio('mix.mka'),true); assert.equal(isAudio('track.odd','audio/custom'),true); assert.equal(isAudio('film.mp4','video/mp4'),false); assert.equal(isAudio('note.txt'),false); assert.equal(sizeLabel(1024**3),'1.0 GB'); });
+test('browser folder walk collects nested music and skips notes', async () => {
   const handle = {
     async *values() {
       yield { name: '.hidden', kind: 'directory' };
       yield { name: 'note.txt', kind: 'file', getFile: async () => ({ name: 'note.txt' }) };
-      yield { name: 'nested', kind: 'directory', async *values() { yield { name: 'Clip.MP4', kind: 'file', getFile: async () => ({ name: 'Clip.MP4' }) }; } };
+      yield { name: 'nested', kind: 'directory', async *values() { yield { name: 'Track.FLAC', kind: 'file', getFile: async () => ({ name: 'Track.FLAC' }) }; } };
     }
   };
   const files = await filesFromDirectory(handle);
-  assert.deepEqual(files.map(file => file.name), ['Clip.MP4']);
-  assert.equal(files[0].webkitRelativePath, 'nested/Clip.MP4');
+  assert.deepEqual(files.map(file => file.name), ['Track.FLAC']);
+  assert.equal(files[0].webkitRelativePath, 'nested/Track.FLAC');
 });

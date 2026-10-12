@@ -106,7 +106,8 @@ app.whenReady().then(async () => {
   protocol.handle('videe', async request => {
     const url = new URL(request.url); const id = url.pathname.slice(1); const entry = registry[id];
     if (url.hostname !== 'media' || !entry) return new Response('Not found', { status: 404 });
-    try { return await mediaResponse(request, entry.converted || entry.path); } catch { return new Response('File unavailable', { status: 404 }); }
+    const selectedPath = url.searchParams.has('converted') ? (entry.converted || entry.path) : entry.path;
+    try { return await mediaResponse(request, selectedPath); } catch { return new Response('File unavailable', { status: 404 }); }
   });
   register('get-gpu-status', async () => {
     const status = await app.getGPUFeatureStatus();
@@ -117,7 +118,7 @@ app.whenReady().then(async () => {
     };
   });
   register('pick-files', async () => {
-    const result = await dialog.showOpenDialog(win, { title: 'Open media', properties: ['openFile', 'multiSelections'], filters: [{ name: 'Media', extensions: ['mp1','mp2','mp3','m4a','m4b','mp4','aac','alac','ogg','oga','opus','flac','wv','wav','wave','w64','rf64','aiff','aif','au','snd','wma','ac3','dts','mpc','mpp','mp+','spx','ape','tak','mka','mkv','webm','mov','3g2','rmvb','ts'] }] });
+    const result = await dialog.showOpenDialog(win, { title: 'Open music', properties: ['openFile', 'multiSelections'], filters: [{ name: 'Music', extensions: ['mp1','mp2','mp3','m4a','m4b','aac','alac','ogg','oga','opus','flac','wv','wav','wave','w64','rf64','aiff','aif','au','snd','wma','ac3','dts','mpc','mpp','mp+','spx','ape','tak','mka'] }] });
     if (result.canceled) return null;
     return importPaths(result.filePaths);
   });
@@ -138,7 +139,7 @@ app.whenReady().then(async () => {
     return { name, records, folders: [...grouped].map(([folder, ids]) => ({ name: folder, ids })) };
   });
   register('import-paths', importPaths);
-  register('get-source', async id => { const entry = registry[id]; if (!entry) throw new Error('File not found. Please add it again.'); await fs.access(entry.converted || entry.path); return `videe://media/${id}`; });
+  register('get-source', async id => { const entry = registry[id]; if (!entry) throw new Error('File not found. Please add it again.'); await fs.access(entry.path); return `videe://media/${id}`; });
   register('get-artwork', async id => { const entry = registry[id]; if (!entry) return null; try { await fs.access(ffmpegBinary()); await fs.access(entry.path); return await extractArtwork(entry.path); } catch { return null; } });
   register('forget-video', async id => { if (processJob?.id === id) throw new Error('Cancel the conversion before removing this video.'); const entry = registry[id]; if (entry?.converted) await fs.rm(entry.converted, { force: true }); delete registry[id]; await persist(); });
   register('cancel-conversion', () => { if (processJob) { processJob.cancelled = true; processJob.child.kill('SIGTERM'); } });
@@ -154,13 +155,6 @@ app.whenReady().then(async () => {
     if (processJob) throw new Error('Another track is being converted.');
     await fs.access(ffmpegBinary());
     const result = await runEncode(id, ['-i', registry[id].path, '-map', '0:a:0', '-vn', '-c:a', 'aac', '-b:a', '256k'], 'm4a');
-    return result.src;
-  });
-  register('convert-media', async id => {
-    if (!registry[id]) throw new Error('Media not found.');
-    if (processJob) throw new Error('Another item is being converted.');
-    await fs.access(ffmpegBinary());
-    const result = await runEncode(id, ['-i', registry[id].path, '-map', '0:v:0?', '-map', '0:a:0?', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '21', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k']);
     return result.src;
   });
   register('cut-video', async (id, start, end, duration) => {
