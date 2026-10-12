@@ -7,6 +7,7 @@ export const ALTSTORE_JSON = `${SITE_ORIGIN}/altstore.json`;
 export const ALTSTORE_ADD = `altstore://source?url=${encodeURIComponent(ALTSTORE_JSON)}`;
 
 const NOTES = {
+  '0.1.8': 'Background mini player keeps playback going while you browse the library, with updated Melodee terminology throughout.',
   '0.1.7': 'Melodee branding throughout, improved folder imports, richer folder-loading feedback, and more reliable video handling.',
   '0.1.6': 'Smoother 4K playback, direct file import, and broader video-format support.',
   '0.1.5': 'Bulk library removal, nested folder import, and deleting a folder also removes its videos.',

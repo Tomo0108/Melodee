@@ -1,6 +1,13 @@
 name: Release apps
 on:
   workflow_dispatch:
+    inputs:
+      target:
+        description: Build every platform, or only the Windows release
+        required: true
+        default: all
+        type: choice
+        options: [all, windows]
   push:
     tags: ['v*']
 permissions:
@@ -10,6 +17,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   macos:
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.target == 'all' }}
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -49,6 +57,7 @@ jobs:
           path: release/*.exe
           if-no-files-found: error
   ios:
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.target == 'all' }}
     runs-on: macos-latest
     continue-on-error: true
     steps:
@@ -66,7 +75,7 @@ jobs:
           if-no-files-found: error
   release:
     needs: [macos, windows, ios]
-    if: ${{ !cancelled() && needs.macos.result == 'success' && needs.windows.result == 'success' }}
+    if: ${{ !cancelled() && needs.windows.result == 'success' && (needs.macos.result == 'success' || needs.macos.result == 'skipped') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
